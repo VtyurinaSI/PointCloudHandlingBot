@@ -14,10 +14,10 @@ namespace PointCloudHandlingBot
 {
     class UpdateHandler : IUpdateHandler
     {
-        record CatFactDto(string Fact, int Length);
         public delegate Task MessageHandler(string msg);
-        public event MessageHandler? OnHandleUpdateStarted;
         public event MessageHandler? OnHandleUpdateCompleted;
+
+        public event MessageHandler? OnHandleUpdateStarted;
         public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
         {
             await Task.Run(() => Console.WriteLine($"Ошибка: {exception.Message}"), cancellationToken);
@@ -31,13 +31,19 @@ namespace PointCloudHandlingBot
                 await Task.Run(() => Console.WriteLine("Message is null"));
                 return;
             }
-            OnHandleUpdateStarted?.Invoke(update.Message.Text);
-            var botText = "Сообщение получено!";
-            await botClient.SendMessage(update.Message.Chat.Id, botText, cancellationToken: token);
+            string? textMsg = update.Message.Text;
+            if (textMsg is null) return;
+            OnHandleUpdateStarted?.Invoke(textMsg);
 
-            OnHandleUpdateCompleted?.Invoke(update.Message.Text);
+            await botClient.SendMessage(update.Message.Chat.Id, MakeResponseToTtext(textMsg), cancellationToken: token);
+
+            OnHandleUpdateCompleted?.Invoke(textMsg);
         }
 
-
+        private string MakeResponseToTtext(string msg)
+        {
+            if (msg == "/start") return "Привет! Я умею обрабатывать объемные облака точек!";
+            return string.Empty;
+        }
     }
 }
