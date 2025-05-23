@@ -38,8 +38,6 @@ namespace PointCloudHandlingBot
                 return;
             }
             long id = update.Message.Chat.Id;
-            //var botText = "Сообщение получено!";
-            //await botClient.SendMessage(update.Message.Chat.Id, botText, cancellationToken: token);
             PntCldHandling pcl = new();
             string? textMsg = update.Message.Text;
             if (textMsg is not null)
@@ -52,9 +50,6 @@ namespace PointCloudHandlingBot
                             "Привет! Я умею обрабатывать объемные облака точек!",
                             cancellationToken: token);
                         break;
-                    //case "/pcl":
-                    //    //await SendProjectionAsync(update.Message.Chat.Id, pcl.ReadPointCloud("pcl.txt"));
-                    //    break;
                     default:
                         await botClient.SendMessage(id,
                             "Получил сообщение",
@@ -81,9 +76,10 @@ namespace PointCloudHandlingBot
                     await SendLogToBot(id, "Скачал файл...");
                     using var sr = new StreamReader(ms);
                     string data = await sr.ReadToEndAsync();
-                    var lines = data.Split(new[] { "\r\n","\n" }, StringSplitOptions.None);
+                    var lines = data.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
                     await SendLogToBot(id, "Подготавливаю результат...");
-                    await SendProjectionAsync(update.Message.Chat.Id, pcl.ReadPointCloud(lines));
+                    var (points, lims) = pcl.ReadPointCloud(lines);
+                    await SendProjectionAsync(update.Message.Chat.Id, points, lims);
                 }
                 else
 
@@ -96,7 +92,7 @@ namespace PointCloudHandlingBot
 
         public async Task SendProjectionAsync(
          long chatId,
-         IReadOnlyList<Vector3> points,
+         IReadOnlyList<Vector3> points, PclLims lims,
          int width = 800,
          int height = 600,
          int padding = 20)
@@ -109,8 +105,8 @@ namespace PointCloudHandlingBot
             float minY = points.Min(p => p.Y);
             float maxY = points.Max(p => p.Y);
 
-            float spanX = maxX - minX;
-            float spanY = maxY - minY;
+            float spanX = lims.xMax - lims.xMin;
+            float spanY = lims.yMax - lims.yMin;
             if (spanX == 0) spanX = 1;
             if (spanY == 0) spanY = 1;
 
@@ -124,14 +120,16 @@ namespace PointCloudHandlingBot
                 for (int x = 0; x < width; x++)
                     image[x, y] = white;
 
-            var blue = new Rgba32(0, 0, 255, 255);
+            //var blue = new Rgba32(0, 0, 255, 255);          
+            float min = lims.zMin, max = lims.zMax;
+
             foreach (var p in points)
             {
                 int px = (int)((p.X - minX) * scale + padding);
                 int py = height - 1 - (int)((p.Y - minY) * scale + padding);
 
                 if (px >= 0 && px < width && py >= 0 && py < height)
-                    image[px, py] = blue;
+                    image[px, py] = MapPlasma(max-p.Z, min, max);
             }
             using var ms = new MemoryStream();
             image.SaveAsPng(ms);
@@ -143,12 +141,35 @@ namespace PointCloudHandlingBot
                 caption: "Проекция облака точек");
         }
 
-        private string MakeResponseToText(string msg)
+        Rgba32 MapPlasma(float z, float minZ, float maxZ)
         {
-            if (msg == "/start") return "Привет! Я умею обрабатывать объемные облака точек!";
-            return string.Empty;
+            var plasmaStops = new List<(float pos, Rgba32 col)> {
+            (0.00f, new Rgba32(13,   8, 135,255)),
+            (0.25f, new Rgba32(75,   3, 161,255)),
+            (0.50f, new Rgba32(125,  32,180,255)),
+            (0.75f, new Rgba32(168,  95,189,255)),
+            (1.00f, new Rgba32(240, 249, 33,255)),
+                };
+            float t = (z - minZ) / (maxZ - minZ);
+            t = Math.Clamp(t, 0, 1);
+
+            for (int i = 0; i < plasmaStops.Count - 1; i++)
+            {
+                var (p0, c0) = plasmaStops[i];
+                var (p1, c1) = plasmaStops[i + 1];
+                if (t >= p0 && t <= p1)
+                {
+                    float f = (t - p0) / (p1 - p0);
+                    return new Rgba32(
+                        (byte)(c0.R + f * (c1.R - c0.R)),
+                        (byte)(c0.G + f * (c1.G - c0.G)),
+                        (byte)(c0.B + f * (c1.B - c0.B)),
+                        255
+                    );
+                }
+            }
+            return plasmaStops.Last().col;
+
         }
-
-
     }
 }
