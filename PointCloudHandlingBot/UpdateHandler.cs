@@ -7,8 +7,17 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace PointCloudHandlingBot
 {
+
     class UpdateHandler : IUpdateHandler
     {
+        private async Task SendLogToBot(long id, string msg)
+        {
+            await botClient.SendMessage(id,
+                                msg,
+                                cancellationToken: token);
+        }
+        ITelegramBotClient botClient = null!;
+        CancellationToken token;
         public delegate Task MessageHandler(string msg);
         public event MessageHandler? OnHandleUpdateCompleted;
 
@@ -20,13 +29,15 @@ namespace PointCloudHandlingBot
 
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken token)
         {
+            this.botClient = botClient;
+            this.token = token;
 
             if (update.Message is null)
             {
                 await Task.Run(() => Console.WriteLine("Message is null"));
                 return;
             }
-            OnHandleUpdateStarted?.Invoke(update.Message.Text);
+            long id = update.Message.Chat.Id;
             //var botText = "Сообщение получено!";
             //await botClient.SendMessage(update.Message.Chat.Id, botText, cancellationToken: token);
             PntCldHandling pcl = new();
@@ -41,11 +52,11 @@ namespace PointCloudHandlingBot
                             "Привет! Я умею обрабатывать объемные облака точек!",
                             cancellationToken: token);
                         break;
-                    case "/pcl":
-                        await SendProjectionAsync(update.Message.Chat.Id, pcl.ReadPointCloud("pcl.txt"));
-                        break;
+                    //case "/pcl":
+                    //    //await SendProjectionAsync(update.Message.Chat.Id, pcl.ReadPointCloud("pcl.txt"));
+                    //    break;
                     default:
-                        await botClient.SendMessage(update.Message.Chat.Id,
+                        await botClient.SendMessage(id,
                             "Получил сообщение",
                             cancellationToken: token);
                         break;
@@ -56,20 +67,31 @@ namespace PointCloudHandlingBot
             {
                 var doc = update.Message.Document;
                 if (doc.FileName is null) return;
-                
-                string fileName = doc.FileName ?? "";
+
+                string fileName = doc.FileName;
 
                 string extension = Path.GetExtension(fileName).ToLowerInvariant();
-                if (extension == ".txt")                
-                    await SendProjectionAsync(update.Message.Chat.Id, pcl.ReadPointCloud(doc.FileName));
-                
-                else
+                if (extension == ".txt")
                 {
-                    await botClient.SendMessage(update.Message.Chat.Id,
-                        "Я не умею работать с такими файлами!",
-                        cancellationToken: token);
+                    await SendLogToBot(id, "Обрабатываю...");
+                    var file = await botClient.GetFile(doc.FileId);
+                    await using var ms = new MemoryStream();
+                    await botClient.DownloadFile(file.FilePath, ms);
+                    ms.Position = 0;
+                    await SendLogToBot(id, "Скачал файл...");
+                    using var sr = new StreamReader(ms);
+                    string data = await sr.ReadToEndAsync();
+                    var lines = data.Split(new[] { "\r\n","\n" }, StringSplitOptions.None);
+                    await SendLogToBot(id, "Подготавливаю результат...");
+                    await SendProjectionAsync(update.Message.Chat.Id, pcl.ReadPointCloud(lines));
                 }
-            }    
+                else
+
+                    await botClient.SendMessage(update.Message.Chat.Id,
+                        "Я не умею работать с такими файлами Т_Т",
+                        cancellationToken: token);
+
+            }
         }
 
         public async Task SendProjectionAsync(

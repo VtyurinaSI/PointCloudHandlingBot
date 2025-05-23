@@ -10,11 +10,11 @@ namespace PointCloudHandlingBot
     class PntCldHandling
     {
 
-        internal List<Vector3> ReadPointCloud(string path)
+        internal List<Vector3> ReadPointCloud(string[] lines)
         {
             var positions = new List<Vector3>();
 
-            foreach (var line in File.ReadLines(path))
+            foreach (var line in lines)
             {
                 if (string.IsNullOrWhiteSpace(line)) continue;
                 var parts = line.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
