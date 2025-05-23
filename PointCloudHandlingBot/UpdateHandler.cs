@@ -1,9 +1,10 @@
-﻿using System.Numerics;
+﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.ColorSpaces;
+using SixLabors.ImageSharp.PixelFormats;
+using System.Numerics;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace PointCloudHandlingBot
 {
@@ -66,7 +67,7 @@ namespace PointCloudHandlingBot
                 string fileName = doc.FileName;
 
                 string extension = Path.GetExtension(fileName).ToLowerInvariant();
-                if (extension == ".txt")
+                if (extension == ".txt" || extension == ".ply")
                 {
                     await SendLogToBot(id, "Обрабатываю...");
                     var file = await botClient.GetFile(doc.FileId);
@@ -78,8 +79,16 @@ namespace PointCloudHandlingBot
                     string data = await sr.ReadToEndAsync();
                     var lines = data.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
                     await SendLogToBot(id, "Подготавливаю результат...");
-                    var (points, lims) = pcl.ReadPointCloud(lines);
-                    await SendProjectionAsync(update.Message.Chat.Id, points, lims);
+                    if (extension == ".txt")
+                    {
+                        var (points, lims) = pcl.ReadPointCloud_txt(lines);
+                        await SendProjectionAsync(update.Message.Chat.Id, points, lims);
+                    }
+                    else
+                    {
+                        var (points, colors,lims) = pcl.ReadPointCloud_ply(lines);
+                        await SendProjectionAsync(update.Message.Chat.Id, points, colors,lims);
+                    }
                 }
                 else
 
@@ -89,7 +98,58 @@ namespace PointCloudHandlingBot
 
             }
         }
+        public async Task SendProjectionAsync(
+         long chatId,
+         IReadOnlyList<Vector3> points, IReadOnlyList<Vector3> colors, PclLims lims,
+         int width = 800,
+         int height = 600,
+         int padding = 20)
+        {
+            if (points == null || points.Count == 0)
+                throw new ArgumentException("Нет точек для проекции", nameof(points));
 
+            float minX = points.Min(p => p.X);
+            float maxX = points.Max(p => p.X);
+            float minY = points.Min(p => p.Y);
+            float maxY = points.Max(p => p.Y);
+
+            float spanX = lims.xMax - lims.xMin;
+            float spanY = lims.yMax - lims.yMin;
+            if (spanX == 0) spanX = 1;
+            if (spanY == 0) spanY = 1;
+
+            float scaleX = (width - 2 * padding) / spanX;
+            float scaleY = (height - 2 * padding) / spanY;
+            float scale = MathF.Min(scaleX, scaleY);
+
+            using var image = new Image<Rgba32>(width, height);
+            var white = new Rgba32(255, 255, 255, 255);
+            for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
+                    image[x, y] = white;
+
+            //var blue = new Rgba32(0, 0, 255, 255);          
+            float min = lims.zMin, max = lims.zMax;
+
+            for (int i = 0; i < points.Count; i++)
+            {
+                var p = points[i];
+                var c = colors[i];
+                int px = (int)((p.X - minX) * scale + padding);
+                int py = height - 1 - (int)((p.Y - minY) * scale + padding);
+                if (px >= 0 && px < width && py >= 0 && py < height)
+                    image[px, py] = new Rgba32(c.X, c.Y, c.Z, 255);
+            }
+
+            using var ms = new MemoryStream();
+            image.SaveAsPng(ms);
+            ms.Position = 0;
+            var input = InputFile.FromStream(ms, fileName: "projection.png");
+            await Program.botClient.SendPhoto(
+                chatId: chatId,
+                photo: input,
+                caption: "Проекция облака точек");
+        }
         public async Task SendProjectionAsync(
          long chatId,
          IReadOnlyList<Vector3> points, PclLims lims,
