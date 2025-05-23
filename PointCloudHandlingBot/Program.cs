@@ -6,10 +6,11 @@ namespace PointCloudHandlingBot
 {
     internal class Program
     {
+        public static TelegramBotClient botClient = new TelegramBotClient(BotToken.token);
         static async Task Main(string[] args)
         {
             var cts = new CancellationTokenSource();
-            var botClient = new TelegramBotClient(BotToken.token);
+            
             var handler = new UpdateHandler();
             try
             {
