@@ -30,16 +30,48 @@ namespace PointCloudHandlingBot
             //var botText = "Сообщение получено!";
             //await botClient.SendMessage(update.Message.Chat.Id, botText, cancellationToken: token);
             PntCldHandling pcl = new();
-            if (update.Message.Text == "/start") await botClient.SendMessage(update.Message.Chat.Id, "Привет! Я умею обрабатывать объемные облака точек!", cancellationToken: token);
-            if (update.Message.Text == "/pcl") await SendProjectionAsync(update.Message.Chat.Id, pcl.ReadPointCloud("pcl.txt"));
             string? textMsg = update.Message.Text;
-            if (textMsg is null) return;
-            OnHandleUpdateStarted?.Invoke(textMsg);
+            if (textMsg is not null)
+            {
+                OnHandleUpdateStarted?.Invoke(textMsg);
+                switch (textMsg)
+                {
+                    case "/start":
+                        await botClient.SendMessage(update.Message.Chat.Id,
+                            "Привет! Я умею обрабатывать объемные облака точек!",
+                            cancellationToken: token);
+                        break;
+                    case "/pcl":
+                        await SendProjectionAsync(update.Message.Chat.Id, pcl.ReadPointCloud("pcl.txt"));
+                        break;
+                    default:
+                        await botClient.SendMessage(update.Message.Chat.Id,
+                            "Получил сообщение",
+                            cancellationToken: token);
+                        break;
+                }
+                OnHandleUpdateCompleted?.Invoke(textMsg);
+            }
+            if (update.Message.Document is not null)
+            {
+                var doc = update.Message.Document;
+                if (doc.FileName is null) return;
+                
+                string fileName = doc.FileName ?? "";
 
-            await botClient.SendMessage(update.Message.Chat.Id, MakeResponseToTtext(textMsg), cancellationToken: token);
-
-            OnHandleUpdateCompleted?.Invoke(textMsg);
+                string extension = Path.GetExtension(fileName).ToLowerInvariant();
+                if (extension == ".txt")                
+                    await SendProjectionAsync(update.Message.Chat.Id, pcl.ReadPointCloud(doc.FileName));
+                
+                else
+                {
+                    await botClient.SendMessage(update.Message.Chat.Id,
+                        "Я не умею работать с такими файлами!",
+                        cancellationToken: token);
+                }
+            }    
         }
+
         public async Task SendProjectionAsync(
          long chatId,
          IReadOnlyList<Vector3> points,
@@ -79,12 +111,6 @@ namespace PointCloudHandlingBot
                 if (px >= 0 && px < width && py >= 0 && py < height)
                     image[px, py] = blue;
             }
-
-        private string MakeResponseToTtext(string msg)
-        {
-            if (msg == "/start") return "Привет! Я умею обрабатывать объемные облака точек!";
-            return string.Empty;
-        }
             using var ms = new MemoryStream();
             image.SaveAsPng(ms);
             ms.Position = 0;
@@ -94,6 +120,13 @@ namespace PointCloudHandlingBot
                 photo: input,
                 caption: "Проекция облака точек");
         }
+
+        private string MakeResponseToText(string msg)
+        {
+            if (msg == "/start") return "Привет! Я умею обрабатывать объемные облака точек!";
+            return string.Empty;
+        }
+
 
     }
 }
