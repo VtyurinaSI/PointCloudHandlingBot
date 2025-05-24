@@ -1,4 +1,5 @@
-﻿using SixLabors.ImageSharp;
+﻿using PointCloudHandlingBot.PointCloudProcesses;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.ColorSpaces;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Numerics;
@@ -20,7 +21,7 @@ namespace PointCloudHandlingBot
         }
         ITelegramBotClient botClient = null!;
         CancellationToken token;
-        public delegate Task MessageHandler(User user,string msg);
+        public delegate Task MessageHandler(User user, string msg);
         public event MessageHandler? OnHandleUpdateCompleted;
 
         public event MessageHandler? OnHandleUpdateStarted;
@@ -39,10 +40,12 @@ namespace PointCloudHandlingBot
                 await Task.Run(() => Console.WriteLine("Message is null"));
                 return;
             }
+            PclProcess pclProc = new();
             string ch = update.Message.Chat.Username;
             long id = update.Message.Chat.Id;
             User user = botUsers.GetOrAdd(id, id => new User(id, ch));
-            PntCldHandling pcl = new();
+            PclReading pcl = new();
+            Drawing draw = new();
             string? textMsg = update.Message.Text;
             if (textMsg is not null)
             {
@@ -53,16 +56,19 @@ namespace PointCloudHandlingBot
                         await botClient.SendMessage(ch,
                             "Привет! Я умею обрабатывать объемные облака точек!",
                             cancellationToken: token);
-                        
+
                         break;
-                    case string v when v.StartsWith("/voxel"):
-                        string rest = v.Substring(6).Replace('.',',');
-                        if (double.TryParse(rest,out double voxelSize))
-                        {
-                            List<Vector3> voxeled = pcl.VoxelFilter(user.PointCloud, voxelSize);
-                            await SendProjectionAsync(user.ChatId, voxeled, user.PclLims);
-                        }
-                        break;
+                    //case string v when v.StartsWith("/voxel"):
+                    //    string rest = v.Substring(6).Replace('.', ',');
+                    //    if (double.TryParse(rest, out double voxelSize))
+                    //    {
+
+                    //        List<Vector3> voxeled = pclProc.VoxelFilter(user.PointCloud, voxelSize);
+                    //        user.Colors = draw.Coloring(user.PointCloud, user.PclLims, MapJet);
+                    //        var image = draw.DrawProjection(voxeled, user.Colors, user.PclLims);
+                    //        await SendProjectionAsync(image, user);
+                    //    }
+                    //    break;
                     default:
 
                         await botClient.SendMessage(id,
@@ -91,16 +97,32 @@ namespace PointCloudHandlingBot
                     string data = await sr.ReadToEndAsync();
                     var lines = data.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
                     await SendLogToBot(id, "Подготавливаю результат...");
+                    Image<Rgba32> image;
                     if (extension == ".txt")
                     {
-                         (user.PointCloud, user.PclLims) = pcl.ReadPointCloud_txt(lines);
-                        await SendProjectionAsync(user.ChatId, user.PointCloud, user.PclLims);
+                        (user.PointCloud, user.PclLims) = pcl.ReadPointCloud_txt(lines);
+
+
+                        //user.Colors = draw.Coloring(user.PointCloud, user.PclLims, MapCool);
+
+                        //image = draw.DrawProjection(user.PointCloud, user.Colors, user.PclLims);
+                        //await SendProjectionAsync(image, user);
+
+                        //user.Colors = draw.Coloring(user.PointCloud, user.PclLims, MapJet);
+                        //image = draw.DrawProjection(user.PointCloud, user.Colors, user.PclLims);
+                        //await SendProjectionAsync(image, user);
+
+                        user.Colors = draw.Coloring(user.PointCloud, user.PclLims, Drawing.MapSpring);
+                        //image = draw.DrawProjection(user.PointCloud, user.Colors, user.PclLims);
+                        //await SendProjectionAsync(image, user);
+
+                        //user.Colors = draw.Coloring(user.PointCloud, user.PclLims, MapPlasma);
                     }
                     else
-                    {
-                         (user.PointCloud, user.Colors, user.PclLims) = pcl.ReadPointCloud_ply(lines);
-                        await SendProjectionAsync(update.Message.Chat.Id, user.PointCloud, user.Colors, user.PclLims);
-                    }
+                        (user.PointCloud, user.Colors, user.PclLims) = pcl.ReadPointCloud_ply(lines);
+
+                     image = draw.DrawProjection(user.PointCloud, user.Colors, user.PclLims);
+                    await SendProjectionAsync(image, user);
                 }
                 else
 
@@ -110,137 +132,20 @@ namespace PointCloudHandlingBot
 
             }
         }
-        public async Task SendProjectionAsync(
-         long chatId,
-         IReadOnlyList<Vector3> points, IReadOnlyList<Vector3> colors, PclLims lims,
-         int width = 800,
-         int height = 600,
-         int padding = 20)
+
+        public async Task SendProjectionAsync(Image<Rgba32> image, User user)
         {
-            if (points == null || points.Count == 0)
-                throw new ArgumentException("Нет точек для проекции", nameof(points));
-
-            float minX = points.Min(p => p.X);
-            float maxX = points.Max(p => p.X);
-            float minY = points.Min(p => p.Y);
-            float maxY = points.Max(p => p.Y);
-
-            float spanX = lims.xMax - lims.xMin;
-            float spanY = lims.yMax - lims.yMin;
-            if (spanX == 0) spanX = 1;
-            if (spanY == 0) spanY = 1;
-
-            float scaleX = (width - 2 * padding) / spanX;
-            float scaleY = (height - 2 * padding) / spanY;
-            float scale = MathF.Min(scaleX, scaleY);
-
-            using var image = new Image<Rgba32>(width, height);
-            var white = new Rgba32(255, 255, 255, 255);
-            for (int y = 0; y < height; y++)
-                for (int x = 0; x < width; x++)
-                    image[x, y] = white;
-         
-            float min = lims.zMin, max = lims.zMax;
-
-            for (int i = 0; i < points.Count; i++)
-            {
-                var p = points[i];
-                var c = colors[i];
-                int px = (int)((p.X - minX) * scale + padding);
-                int py = height - 1 - (int)((p.Y - minY) * scale + padding);
-                if (px >= 0 && px < width && py >= 0 && py < height)
-                    image[px, py] = new Rgba32(c.X, c.Y, c.Z, 255);
-            }
-
             using var ms = new MemoryStream();
             image.SaveAsPng(ms);
             ms.Position = 0;
             var input = InputFile.FromStream(ms, fileName: "projection.png");
             await Program.botClient.SendPhoto(
-                chatId: chatId,
+                chatId: user.ChatId,
                 photo: input,
                 caption: "Проекция облака точек");
-        }
-        public async Task SendProjectionAsync(
-         long chatId,
-         IReadOnlyList<Vector3> points, PclLims lims,
-         int width = 800,
-         int height = 600,
-         int padding = 20)
-        {
-            if (points == null || points.Count == 0)
-                throw new ArgumentException("Нет точек для проекции", nameof(points));
-
-            float minX = points.Min(p => p.X);
-            float maxX = points.Max(p => p.X);
-            float minY = points.Min(p => p.Y);
-            float maxY = points.Max(p => p.Y);
-
-            float spanX = lims.xMax - lims.xMin;
-            float spanY = lims.yMax - lims.yMin;
-            if (spanX == 0) spanX = 1;
-            if (spanY == 0) spanY = 1;
-
-            float scaleX = (width - 2 * padding) / spanX;
-            float scaleY = (height - 2 * padding) / spanY;
-            float scale = MathF.Min(scaleX, scaleY);
-
-            using var image = new Image<Rgba32>(width, height);
-            var white = new Rgba32(255, 255, 255, 255);
-            for (int y = 0; y < height; y++)
-                for (int x = 0; x < width; x++)
-                    image[x, y] = white;
-
-            //var blue = new Rgba32(0, 0, 255, 255);          
-            float min = lims.zMin, max = lims.zMax;
-
-            foreach (var p in points)
-            {
-                int px = (int)((p.X - minX) * scale + padding);
-                int py = height - 1 - (int)((p.Y - minY) * scale + padding);
-
-                if (px >= 0 && px < width && py >= 0 && py < height)
-                    image[px, py] = MapPlasma(max - p.Z, min, max);
-            }
-            using var ms = new MemoryStream();
-            image.SaveAsPng(ms);
-            ms.Position = 0;
-            var input = InputFile.FromStream(ms, fileName: "projection.png");
-            await Program.botClient.SendPhoto(
-                chatId: chatId,
-                photo: input,
-                caption: "Проекция облака точек");
+            image.Dispose();
         }
 
-        Rgba32 MapPlasma(float z, float minZ, float maxZ)
-        {
-            var plasmaStops = new List<(float pos, Rgba32 col)> {
-            (0.00f, new Rgba32(13,   8, 135,255)),
-            (0.25f, new Rgba32(75,   3, 161,255)),
-            (0.50f, new Rgba32(125,  32,180,255)),
-            (0.75f, new Rgba32(168,  95,189,255)),
-            (1.00f, new Rgba32(240, 249, 33,255)),
-                };
-            float t = (z - minZ) / (maxZ - minZ);
-            t = Math.Clamp(t, 0, 1);
 
-            for (int i = 0; i < plasmaStops.Count - 1; i++)
-            {
-                var (p0, c0) = plasmaStops[i];
-                var (p1, c1) = plasmaStops[i + 1];
-                if (t >= p0 && t <= p1)
-                {
-                    float f = (t - p0) / (p1 - p0);
-                    return new Rgba32(
-                        (byte)(c0.R + f * (c1.R - c0.R)),
-                        (byte)(c0.G + f * (c1.G - c0.G)),
-                        (byte)(c0.B + f * (c1.B - c0.B)),
-                        255
-                    );
-                }
-            }
-            return plasmaStops.Last().col;
-
-        }
     }
 }

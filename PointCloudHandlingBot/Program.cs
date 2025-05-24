@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using Microsoft.VisualBasic;
+using System.Collections.Concurrent;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
@@ -48,7 +49,7 @@ namespace PointCloudHandlingBot
             }
         }
         private static async Task StartHandling(User user, string msg) => await Task.Run(() =>
-                Console.WriteLine($"[{user.ChatId}] [{user.UserName}] : {msg}"));
+                Console.WriteLine($"[{DateTime.Now.ToString("hh:mm:ss:fff")}] [{user.ChatId}] [{user.UserName}] : {msg}"));
         private static async Task CompletedHandling(User user, string msg) => await Task.Run(() => Console.WriteLine($"Закончилась обработка сообщения \"{msg}\""));
     }
 }

@@ -1,18 +1,19 @@
-﻿using System;
+﻿using SixLabors.ImageSharp.PixelFormats;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Numerics;
 using System.Threading.Tasks;
 
-namespace PointCloudHandlingBot
+namespace PointCloudHandlingBot.PointCloudProcesses
 {
-    class PntCldHandling
+    class PclReading
     {
-        internal (List<Vector3> points, List<Vector3> colors, PclLims lims) ReadPointCloud_ply(string[] lines)
+        internal (List<Vector3> points, List<Rgba32> colors, PclLims lims) ReadPointCloud_ply(string[] lines)
         {
             var positions = new List<Vector3>();
-            var colors = new List<Vector3>();
+            var colors = new List<Rgba32>();
             PclLims lims = new();
             int isPrevEven = 1;
             for (int i = 0; i < lines.Length; i++)
@@ -45,7 +46,7 @@ namespace PointCloudHandlingBot
                     byte y = byte.Parse(parts[1], CultureInfo.InvariantCulture);
                     byte z = byte.Parse(parts[2], CultureInfo.InvariantCulture);
 
-                    colors.Add(new Vector3(x, y, z));
+                    colors.Add(new Rgba32(x, y, z));
                 }
                 isPrevEven = i % 2;
 
@@ -78,45 +79,9 @@ namespace PointCloudHandlingBot
 
                 positions.Add(new Vector3(x, y, z));
             }
+            
             return (positions, lims);
         }
-        public List<Vector3> VoxelFilter(List<Vector3> originalPoints, double voxelSize)
-        {
-            int numPoints = originalPoints.Count;
-
-            var voxelMap = new Dictionary<(int, int, int), List<int>>();
-
-            for (int i = 0; i < numPoints; i++)
-            {
-                int voxelX = (int)Math.Floor(originalPoints[i].X / voxelSize);
-                int voxelY = (int)Math.Floor(originalPoints[i].Y / voxelSize);
-                int voxelZ = (int)Math.Floor(originalPoints[i].Z / voxelSize);
-                var voxelKey = (voxelX, voxelY, voxelZ);
-
-                if (!voxelMap.ContainsKey(voxelKey))
-                    voxelMap[voxelKey] = new List<int>();
-
-                voxelMap[voxelKey].Add(i);
-            }
-
-            var filteredPoints = new List<Vector3>();
-
-            foreach (var indices in voxelMap.Values)
-            {
-                float sumX = 0, sumY = 0, sumZ = 0;
-                int count = indices.Count;
-
-                foreach (var i in indices)
-                {
-                    sumX += originalPoints[i].X;
-                    sumY += originalPoints[i].Y;
-                    sumZ += originalPoints[i].Z;
-                }
-
-                filteredPoints.Add(new Vector3(sumX, sumY, sumZ) / count);
-            }
-
-            return filteredPoints;
-        }
+        
     }
 }

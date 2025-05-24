@@ -1,4 +1,6 @@
-﻿using System;
+﻿using PointCloudHandlingBot.PointCloudProcesses;
+using SixLabors.ImageSharp.PixelFormats;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -17,7 +19,7 @@ namespace PointCloudHandlingBot
         public long ChatId { get; set; }
         public string UserName { get; set; } = null!;
         public List<Vector3>? PointCloud { get; set; }
-        public List<Vector3>? Colors { get; set; }
+        public List<Rgba32>? Colors { get; set; }
         public PclLims PclLims { get; set; } = new();
     }
 }
