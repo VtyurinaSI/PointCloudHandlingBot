@@ -5,11 +5,11 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PointCloudHandlingBot.PointCloudProcesses
+namespace PointCloudHandlingBot.PointCloudProcesses.PipelineSteps
 {
-    class PclProcess
+    class Voxel
     {
-        public List<Vector3> VoxelFilter(List<Vector3> originalPoints, double voxelSize)
+        public List<Vector3> Process(List<Vector3> originalPoints, double voxelSize)
         {
             int numPoints = originalPoints.Count;
 

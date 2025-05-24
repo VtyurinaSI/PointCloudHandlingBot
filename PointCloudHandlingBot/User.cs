@@ -18,9 +18,12 @@ namespace PointCloudHandlingBot
         }
         public long ChatId { get; set; }
         public string UserName { get; set; } = null!;
-        public List<Vector3>? PointCloud { get; set; }
-        public List<Rgba32>? Colors { get; set; }
-        public PclLims PclLims { get; set; } = new();
+
         public Func<float, float, float, Rgba32> ColorMap = Drawing.MapSpring;
+
+        public UserPclFeatures OrigPcl { get; init; } = new();
+        public UserPclFeatures? CurrentPcl 
+        { get; 
+            set; }
     }
 }

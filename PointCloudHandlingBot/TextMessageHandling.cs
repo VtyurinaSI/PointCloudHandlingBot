@@ -1,4 +1,5 @@
 ﻿using PointCloudHandlingBot.PointCloudProcesses;
+using PointCloudHandlingBot.PointCloudProcesses.PipelineSteps;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
@@ -23,21 +24,31 @@ namespace PointCloudHandlingBot
 
                             Чтобы их применить, перед отображением напиши мне /colorMap<палитра>, например, /colorMapCool.
                             """;
-
+        private static UserPclFeatures GetActualPcl(User user)
+        {
+            UserPclFeatures pcl = user.OrigPcl;
+            if (user.CurrentPcl is not null) 
+                pcl = user.CurrentPcl;
+            return pcl;
+        }
         public static (string?, Image<Rgba32>?) WhatDoYouWant(User user, string textMsg)
         {
             (string? text, Image<Rgba32>? img) answer = (null, null);
+            FileHandling file = new();
+            //UserPclFeatures pcl;
             switch (textMsg)
             {
                 case "/start": answer = (hello, null); break;
 
                 case string v when v.StartsWith("/voxel"):
                     string rest = v.Substring(6).Replace('.', ',');
+
                     if (double.TryParse(rest, out double voxelSize))
                     {
-                        var (newPoints, newColors) = MakeVoxel(user, voxelSize);
-                        FileHandling file = new();
-                        answer = file.MakeResultPcl(user, newPoints, newColors);
+                        var actPcl = GetActualPcl(user);
+                        MakeVoxel(user, actPcl, voxelSize);
+
+                        answer = file.MakeResultPcl(user.ChatId, user.CurrentPcl);
                     }
                     else answer = ("Не смог распарсить(", null);
                     break;
@@ -45,12 +56,12 @@ namespace PointCloudHandlingBot
                 case string m when m.StartsWith("/colorMap"):
                     string colormap = m.Substring(9);
                     answer.text = SetColorMap(user, colormap);
-                    if (user.PointCloud is not null)
-                    {
-                        user.Colors = Drawing.Coloring(user.PointCloud, user.PclLims, user.ColorMap);
-                        FileHandling file = new();
-                        answer = file.MakeResultPcl(user, user.PointCloud, user.Colors);
-                    }
+                    if (user.OrigPcl.PointCloud is null) break;
+                    var pcl = GetActualPcl(user);
+                    pcl.Colors = Drawing.Coloring(pcl, user.ColorMap);
+
+                    answer = file.MakeResultPcl(user.ChatId, pcl);
+
 
                     break;
 
@@ -76,12 +87,13 @@ namespace PointCloudHandlingBot
             }
             return mapInfo;
         }
-        private static (List<Vector3>, List<Rgba32>) MakeVoxel(User user, double voxelSize)
+        private static void MakeVoxel(User user, UserPclFeatures pcl, double voxelSize)
         {
-            PclProcess pclProc = new();
-            List<Vector3> voxeled = pclProc.VoxelFilter(user.PointCloud, voxelSize);
-            List<Rgba32> newColors = Drawing.Coloring(voxeled, user.PclLims, user.ColorMap);
-            return (voxeled, newColors);
+            Voxel voxel = new();
+
+            user.CurrentPcl ??= new();
+            user.CurrentPcl.PointCloud = voxel.Process(pcl.PointCloud, voxelSize);
+            user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
         }
     }
 }

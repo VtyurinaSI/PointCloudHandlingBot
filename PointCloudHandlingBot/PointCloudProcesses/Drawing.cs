@@ -57,26 +57,26 @@ namespace PointCloudHandlingBot.PointCloudProcesses
         /// <param name="padding">Отступы</param>
         /// <returns>Изображение</returns>
         public static Image<Rgba32> DrawProjection(
-         IReadOnlyList<Vector3> points, IReadOnlyList<Rgba32> colors, PclLims lims,
+         UserPclFeatures pcl,
          int width = 800,
          int height = 600,
          int padding = 20)
         {
-            if (points == null || points.Count == 0)
-                throw new ArgumentException("Нет точек для проекции", nameof(points));
+            if (pcl.PointCloud== null || pcl.PointCloud.Count == 0)
+                throw new ArgumentException("Нет точек для проекции", nameof(pcl.PointCloud));
 
-            float scale = GetScale(lims);
-            var image = SetEmptyImage(lims, scale);
+            float scale = GetScale(pcl.PclLims);
+            var image = SetEmptyImage(pcl.PclLims, scale);
 
-            float minx = lims.xMin, miny = lims.yMin;
+            float minx = pcl.PclLims.xMin, miny = pcl.PclLims.yMin;
 
             int radius = 1;
             Rgba32 col = new(0, 0, 255, 255);
-
-            for (int i = 0; i < points.Count; i++)
+            int count = pcl.PointCloud.Count;
+            for (int i = 0; i < count; i++)
             {
-                var p = points[i];
-                var c = colors[i];
+                var p = pcl.PointCloud[i];
+                var c = pcl.Colors[i];
                 int px = (int)((p.X - minx) * scale + padding);
                 int py = height - 1 - (int)((p.Y - miny) * scale + padding);
                 if (px >= 0 && px < width && py >= 0 && py < height)
@@ -93,15 +93,15 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             }
             return image;
         }
-        internal static List<Rgba32> Coloring(List<Vector3> pcl, PclLims lims, Func<float, float, float, Rgba32> ColorMap)
+        internal static List<Rgba32> Coloring(UserPclFeatures pcl, Func<float, float, float, Rgba32> ColorMap)
         {
-            int count = pcl.Count;
+            int count = pcl.PointCloud.Count;
             Rgba32[] colors = new Rgba32[count];
-            float min = lims.zMin, max = lims.zMax;
+            float min = pcl.PclLims.zMin, max = pcl.PclLims.zMax;
 
             for (int i = 0; i < count; i++)
             {
-                colors[i] = ColorMap(pcl[i].Z, min, max);
+                colors[i] = ColorMap(pcl.PointCloud[i].Z, min, max);
             }
 
             return [.. colors];

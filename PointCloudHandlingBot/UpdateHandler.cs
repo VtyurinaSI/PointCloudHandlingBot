@@ -1,4 +1,4 @@
-﻿using PointCloudHandlingBot.PointCloudProcesses;
+﻿using PointCloudHandlingBot.PointCloudProcesses.PipelineSteps;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.ColorSpaces;
 using SixLabors.ImageSharp.PixelFormats;
@@ -42,7 +42,7 @@ namespace PointCloudHandlingBot
                 await Task.Run(() => Console.WriteLine("Message is null"));
                 return;
             }
-            PclProcess pclProc = new();
+            Voxel pclProc = new();
             User user = botUsers.GetOrAdd(update.Message.Chat.Id, id => new User(update.Message.Chat.Id, update.Message.Chat.Username));
             (string? answer, Image<Rgba32>? image) reply = (null, null);
 
@@ -52,7 +52,6 @@ namespace PointCloudHandlingBot
                 OnHandleUpdateStarted?.Invoke(user, textMsg);
                 reply = TextMessageHandling.WhatDoYouWant(user, textMsg);
             }
-            //update.Message.Caption
             if (update.Message.Document is not null)
             {
                 FileHandling file = new();
@@ -61,7 +60,7 @@ namespace PointCloudHandlingBot
                 if (doc.FileName is null) return;
                 OnHandleUpdateStarted?.Invoke(user, $"Received file \"{doc.FileName}\"");
                 reply.answer = await file.ReadFile(bot, user, doc);
-                reply = file.MakeResultPcl(user, user.PointCloud, user.Colors);
+                reply = file.MakeResultPcl(user.ChatId, user.OrigPcl);
             }
 
             if (reply.answer is not null) await SendLogToBot(user.ChatId, reply.answer);

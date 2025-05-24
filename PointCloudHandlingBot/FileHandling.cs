@@ -16,11 +16,11 @@ namespace PointCloudHandlingBot
     {
         public delegate Task PclProcessMessage(long id, string msg);
         public event PclProcessMessage? PclProcessMessageEvent;
-        public (string?, Image<Rgba32>?) MakeResultPcl(User user, List<Vector3> pcl, List<Rgba32> color)
+        public (string?, Image<Rgba32>?) MakeResultPcl(long id,UserPclFeatures pcl)
         {
             Image<Rgba32> image;
-            PclProcessMessageEvent?.Invoke(user.ChatId, "Подготавливаю результат...");
-            image = Drawing.DrawProjection(pcl, color, user.PclLims);
+            PclProcessMessageEvent?.Invoke(id, "Подготавливаю результат...");
+            image = Drawing.DrawProjection(pcl);
             return ("Готово!", image);
         }
 
@@ -40,13 +40,14 @@ namespace PointCloudHandlingBot
                 string fileData = await sr.ReadToEndAsync();
                 string[] lines = fileData.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
                 PclReading pcl = new();
+                user.CurrentPcl = null;
                 if (extension == ".txt")
                 {
-                    (user.PointCloud, user.PclLims) = pcl.ReadPointCloud_txt(lines);
-                    user.Colors = Drawing.Coloring(user.PointCloud, user.PclLims, user.ColorMap);
+                    user.OrigPcl.PointCloud = pcl.ReadPointCloud_txt(lines);
+                    user.OrigPcl.Colors = Drawing.Coloring(user.OrigPcl, user.ColorMap);
                 }
                 else
-                    (user.PointCloud, user.Colors, user.PclLims) = pcl.ReadPointCloud_ply(lines);
+                    (user.OrigPcl.PointCloud, user.OrigPcl.Colors) = pcl.ReadPointCloud_ply(lines);
                 return "Данные загружены!";
             }
             else
