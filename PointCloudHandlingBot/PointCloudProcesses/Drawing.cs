@@ -13,10 +13,10 @@ using static System.Formats.Asn1.AsnWriter;
 
 namespace PointCloudHandlingBot.PointCloudProcesses
 {
-    public class Drawing
+    public static class Drawing
     {
 
-        private float GetScale(PclLims lims,
+        private static float GetScale(PclLims lims,
          int width = 800,
          int height = 600,
          int padding = 20)
@@ -36,7 +36,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             return MathF.Min(scaleX, scaleY);
         }
 
-        private Image<Rgba32> SetEmptyImage(PclLims lims, float scale, int width = 800,
+        private static Image<Rgba32> SetEmptyImage(PclLims lims, float scale, int width = 800,
          int height = 600)
         {
             Image<Rgba32> image = new(width, height);
@@ -56,7 +56,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
         /// <param name="height">Высота изображение</param>
         /// <param name="padding">Отступы</param>
         /// <returns>Изображение</returns>
-        public Image<Rgba32> DrawProjection(
+        public static Image<Rgba32> DrawProjection(
          IReadOnlyList<Vector3> points, IReadOnlyList<Rgba32> colors, PclLims lims,
          int width = 800,
          int height = 600,
@@ -93,24 +93,16 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             }
             return image;
         }
-        internal List<Rgba32> Coloring(List<Vector3> pcl, PclLims lims, Func<float, float, float, Rgba32> ColorMap)
+        internal static List<Rgba32> Coloring(List<Vector3> pcl, PclLims lims, Func<float, float, float, Rgba32> ColorMap)
         {
             int count = pcl.Count;
             Rgba32[] colors = new Rgba32[count];
             float min = lims.zMin, max = lims.zMax;
-            var uniqueT = new HashSet<float>();
 
             for (int i = 0; i < count; i++)
             {
-                float t = Math.Clamp((pcl[i].Z - min) / (max - min), 0f, 1f);
-                uniqueT.Add((float)Math.Round(t, 2));
                 colors[i] = ColorMap(pcl[i].Z, min, max);
             }
-            var sorted = uniqueT.OrderBy(x => x).ToList();
-            int N = Math.Min(10, sorted.Count);
-            Console.WriteLine($"[Coloring] точек={count}, уникальных t={sorted.Count}");
-            Console.WriteLine($"[Coloring] первые {N} уровней t: {string.Join(", ", sorted.Take(N))}"
-                              + (sorted.Count > N ? "…" : ""));
 
             return [.. colors];
         }
