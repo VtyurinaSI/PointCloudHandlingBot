@@ -41,6 +41,7 @@ namespace PointCloudHandlingBot
                 string[] lines = fileData.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
                 PclReading pcl = new();
                 user.CurrentPcl = null;
+                user.OrigPcl = new();
                 if (extension == ".txt")
                 {
                     user.OrigPcl.PointCloud = pcl.ReadPointCloud_txt(lines);
