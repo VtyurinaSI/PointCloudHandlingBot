@@ -5,6 +5,7 @@ using System.Numerics;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
+using static PointCloudHandlingBot.Program;
 
 namespace PointCloudHandlingBot
 {
@@ -19,13 +20,13 @@ namespace PointCloudHandlingBot
         }
         ITelegramBotClient botClient = null!;
         CancellationToken token;
-        public delegate Task MessageHandler(string msg);
+        public delegate Task MessageHandler(User user,string msg);
         public event MessageHandler? OnHandleUpdateCompleted;
 
         public event MessageHandler? OnHandleUpdateStarted;
-        public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
+        public async Task HandleErrorAsync(ITelegramBotClient bot, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
         {
-            await Task.Run(() => Console.WriteLine($"Ошибка: {exception.Message}"), cancellationToken);
+            await Task.Run(() => Console.WriteLine($"Ошибка: {exception.Message}\n{exception.StackTrace}"), cancellationToken);
         }
 
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken token)
@@ -38,26 +39,37 @@ namespace PointCloudHandlingBot
                 await Task.Run(() => Console.WriteLine("Message is null"));
                 return;
             }
+            string ch = update.Message.Chat.Username;
             long id = update.Message.Chat.Id;
+            User user = botUsers.GetOrAdd(id, id => new User(id, ch));
             PntCldHandling pcl = new();
             string? textMsg = update.Message.Text;
             if (textMsg is not null)
             {
-                OnHandleUpdateStarted?.Invoke(textMsg);
+                OnHandleUpdateStarted?.Invoke(user, textMsg);
                 switch (textMsg)
                 {
                     case "/start":
-                        await botClient.SendMessage(update.Message.Chat.Id,
+                        await botClient.SendMessage(ch,
                             "Привет! Я умею обрабатывать объемные облака точек!",
                             cancellationToken: token);
+                        
+                        break;
+                    case string v when v.StartsWith("/voxel"):
+                        string rest = v.Substring(6).Replace('.',',');
+                        if (double.TryParse(rest,out double voxelSize))
+                        {
+                            List<Vector3> voxeled = pcl.VoxelFilter(user.PointCloud, voxelSize);
+                            await SendProjectionAsync(user.ChatId, voxeled, user.PclLims);
+                        }
                         break;
                     default:
+
                         await botClient.SendMessage(id,
                             "Получил сообщение",
                             cancellationToken: token);
                         break;
                 }
-                OnHandleUpdateCompleted?.Invoke(textMsg);
             }
             if (update.Message.Document is not null)
             {
@@ -65,7 +77,7 @@ namespace PointCloudHandlingBot
                 if (doc.FileName is null) return;
 
                 string fileName = doc.FileName;
-
+                OnHandleUpdateStarted?.Invoke(user, $"Received file \"{fileName}\"");
                 string extension = Path.GetExtension(fileName).ToLowerInvariant();
                 if (extension == ".txt" || extension == ".ply")
                 {
@@ -81,13 +93,13 @@ namespace PointCloudHandlingBot
                     await SendLogToBot(id, "Подготавливаю результат...");
                     if (extension == ".txt")
                     {
-                        var (points, lims) = pcl.ReadPointCloud_txt(lines);
-                        await SendProjectionAsync(update.Message.Chat.Id, points, lims);
+                         (user.PointCloud, user.PclLims) = pcl.ReadPointCloud_txt(lines);
+                        await SendProjectionAsync(user.ChatId, user.PointCloud, user.PclLims);
                     }
                     else
                     {
-                        var (points, colors,lims) = pcl.ReadPointCloud_ply(lines);
-                        await SendProjectionAsync(update.Message.Chat.Id, points, colors,lims);
+                         (user.PointCloud, user.Colors, user.PclLims) = pcl.ReadPointCloud_ply(lines);
+                        await SendProjectionAsync(update.Message.Chat.Id, user.PointCloud, user.Colors, user.PclLims);
                     }
                 }
                 else
@@ -127,8 +139,7 @@ namespace PointCloudHandlingBot
             for (int y = 0; y < height; y++)
                 for (int x = 0; x < width; x++)
                     image[x, y] = white;
-
-            //var blue = new Rgba32(0, 0, 255, 255);          
+         
             float min = lims.zMin, max = lims.zMax;
 
             for (int i = 0; i < points.Count; i++)
@@ -189,7 +200,7 @@ namespace PointCloudHandlingBot
                 int py = height - 1 - (int)((p.Y - minY) * scale + padding);
 
                 if (px >= 0 && px < width && py >= 0 && py < height)
-                    image[px, py] = MapPlasma(max-p.Z, min, max);
+                    image[px, py] = MapPlasma(max - p.Z, min, max);
             }
             using var ms = new MemoryStream();
             image.SaveAsPng(ms);

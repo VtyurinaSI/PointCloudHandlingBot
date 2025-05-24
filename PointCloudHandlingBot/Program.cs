@@ -1,4 +1,5 @@
-﻿using Telegram.Bot;
+﻿using System.Collections.Concurrent;
+using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
 
@@ -6,6 +7,8 @@ namespace PointCloudHandlingBot
 {
     internal class Program
     {
+        public static ConcurrentDictionary<long, User> botUsers = new();
+
         public static TelegramBotClient botClient = new TelegramBotClient(BotToken.token);
         static async Task Main(string[] args)
         {
@@ -17,6 +20,7 @@ namespace PointCloudHandlingBot
                 var me = await botClient.GetMe(cts.Token);
 
                 Console.WriteLine($"{me.FirstName} запущен!");
+
                 var receiverOptions = new ReceiverOptions
                 {
                     AllowedUpdates = [UpdateType.Message],
@@ -43,8 +47,9 @@ namespace PointCloudHandlingBot
                 cts.Dispose();
             }
         }
-        private static async Task StartHandling(string msg) => await Task.Run(() => Console.WriteLine($"Началась обработка сообщения \"{msg}\""));
-        private static async Task CompletedHandling(string msg) => await Task.Run(() => Console.WriteLine($"Закончилась обработка сообщения \"{msg}\""));
+        private static async Task StartHandling(User user, string msg) => await Task.Run(() =>
+                Console.WriteLine($"[{user.ChatId}] [{user.UserName}] : {msg}"));
+        private static async Task CompletedHandling(User user, string msg) => await Task.Run(() => Console.WriteLine($"Закончилась обработка сообщения \"{msg}\""));
     }
 }
 

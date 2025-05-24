@@ -6,17 +6,17 @@ using System.Threading.Tasks;
 
 namespace PointCloudHandlingBot
 {
-    internal class PclLims
+    public class PclLims
     {
-        internal float xMin = float.MaxValue;
-        internal float xMax = float.MinValue;
-        internal float yMin = float.MaxValue;
-        internal float yMax = float.MinValue;
-        internal float zMin = float.MaxValue;
-        internal float zMax = float.MinValue;
+        public float xMin = float.MaxValue;
+        public float xMax = float.MinValue;
+        public float yMin = float.MaxValue;
+        public float yMax = float.MinValue;
+        public float zMin = float.MaxValue;
+        public float zMax = float.MinValue;
 
-        internal void UpdMax(float current, ref float max) => max = current > max ? current : max;
-        internal void UpdMin(float current, ref float min) => min = current < min ? current : min;
+        public void UpdMax(float current, ref float max) => max = current > max ? current : max;
+        public void UpdMin(float current, ref float min) => min = current < min ? current : min;
 
     }
 }

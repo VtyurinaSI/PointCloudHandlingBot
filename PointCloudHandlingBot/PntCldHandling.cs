@@ -9,7 +9,7 @@ namespace PointCloudHandlingBot
 {
     class PntCldHandling
     {
-        internal (IReadOnlyList<Vector3> points, IReadOnlyList<Vector3> colors, PclLims lims) ReadPointCloud_ply(string[] lines)
+        internal (List<Vector3> points, List<Vector3> colors, PclLims lims) ReadPointCloud_ply(string[] lines)
         {
             var positions = new List<Vector3>();
             var colors = new List<Vector3>();
@@ -80,8 +80,43 @@ namespace PointCloudHandlingBot
             }
             return (positions, lims);
         }
+        public List<Vector3> VoxelFilter(List<Vector3> originalPoints, double voxelSize)
+        {
+            int numPoints = originalPoints.Count;
 
+            var voxelMap = new Dictionary<(int, int, int), List<int>>();
 
+            for (int i = 0; i < numPoints; i++)
+            {
+                int voxelX = (int)Math.Floor(originalPoints[i].X / voxelSize);
+                int voxelY = (int)Math.Floor(originalPoints[i].Y / voxelSize);
+                int voxelZ = (int)Math.Floor(originalPoints[i].Z / voxelSize);
+                var voxelKey = (voxelX, voxelY, voxelZ);
 
+                if (!voxelMap.ContainsKey(voxelKey))
+                    voxelMap[voxelKey] = new List<int>();
+
+                voxelMap[voxelKey].Add(i);
+            }
+
+            var filteredPoints = new List<Vector3>();
+
+            foreach (var indices in voxelMap.Values)
+            {
+                float sumX = 0, sumY = 0, sumZ = 0;
+                int count = indices.Count;
+
+                foreach (var i in indices)
+                {
+                    sumX += originalPoints[i].X;
+                    sumY += originalPoints[i].Y;
+                    sumZ += originalPoints[i].Z;
+                }
+
+                filteredPoints.Add(new Vector3(sumX, sumY, sumZ) / count);
+            }
+
+            return filteredPoints;
+        }
     }
 }
