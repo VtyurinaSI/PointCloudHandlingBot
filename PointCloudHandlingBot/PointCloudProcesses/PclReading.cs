@@ -14,7 +14,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
         {
             var positions = new List<Vector3>();
             var colors = new List<Rgba32>();
-            int isPrevEven = 1;
+            int r = 0, g = 0, b = 0;
             for (int i = 0; i < lines.Length; i++)
             {
                 if (string.IsNullOrWhiteSpace(lines[i])) continue;
@@ -25,7 +25,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                 if (lines[i].Contains("format")) continue;
                 if (lines[i].Contains("element")) continue;
                 if (lines[i].Contains("property")) continue;
-                if (isPrevEven == 1)
+                if (i % 2 == 0)
                 {
                     float x = float.Parse(parts[0], CultureInfo.InvariantCulture);
                     float y = float.Parse(parts[1], CultureInfo.InvariantCulture);
@@ -35,20 +35,28 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                 }
                 else
                 {
-                    byte x = byte.Parse(parts[0], CultureInfo.InvariantCulture);
-                    byte y = byte.Parse(parts[1], CultureInfo.InvariantCulture);
-                    byte z = byte.Parse(parts[2], CultureInfo.InvariantCulture);
+                    try
+                    {
+                        r = int.Parse(parts[0], CultureInfo.InvariantCulture);
+                        g = int.Parse(parts[1], CultureInfo.InvariantCulture);
+                        b = int.Parse(parts[2], CultureInfo.InvariantCulture);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error parsing color values: {ex.Message}");
+                        continue;
+                    }
 
-                    colors.Add(new Rgba32(x, y, z));
+                    colors.Add(new Rgba32((byte)r, (byte)g, (byte)b, 255));
                 }
-                isPrevEven = i % 2;
+                //isPrevEven = i % 2;
 
             }
 
             return (positions, colors);
         }
 
-        internal List<Vector3>ReadPointCloud_txt(string[] lines)
+        internal List<Vector3> ReadPointCloud_txt(string[] lines)
         {
             var positions = new List<Vector3>();
             foreach (var line in lines)
@@ -64,12 +72,12 @@ namespace PointCloudHandlingBot.PointCloudProcesses
 
                 positions.Add(new Vector3(x, y, z));
             }
-            
+
             return positions;
         }
 
-        
-        
-        
+
+
+
     }
 }
