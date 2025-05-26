@@ -35,21 +35,13 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                 }
                 else
                 {
-                    try
-                    {
-                        r = int.Parse(parts[0], CultureInfo.InvariantCulture);
-                        g = int.Parse(parts[1], CultureInfo.InvariantCulture);
-                        b = int.Parse(parts[2], CultureInfo.InvariantCulture);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error parsing color values: {ex.Message}");
-                        continue;
-                    }
+                    r = int.Parse(parts[0], CultureInfo.InvariantCulture);
+                    g = int.Parse(parts[1], CultureInfo.InvariantCulture);
+                    b = int.Parse(parts[2], CultureInfo.InvariantCulture);
+
 
                     colors.Add(new Rgba32((byte)r, (byte)g, (byte)b, 255));
                 }
-                //isPrevEven = i % 2;
 
             }
 

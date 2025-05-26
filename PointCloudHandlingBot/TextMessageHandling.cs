@@ -24,13 +24,6 @@ namespace PointCloudHandlingBot
 
                             Чтобы их применить, перед отображением напиши мне /colorMap<палитра>, например, /colorMapCool.
                             """;
-        private static UserPclFeatures GetActualPcl(User user)
-        {
-            UserPclFeatures pcl = user.OrigPcl;
-            if (user.CurrentPcl is not null) 
-                pcl = user.CurrentPcl;
-            return pcl;
-        }
         public static (string?, Image<Rgba32>?) WhatDoYouWant(User user, string textMsg)
         {
             (string? text, Image<Rgba32>? img) answer = (null, null);
@@ -71,6 +64,23 @@ namespace PointCloudHandlingBot
             }
             return answer;
         }
+
+        private static UserPclFeatures GetActualPcl(User user)
+        {
+            UserPclFeatures pcl = user.OrigPcl;
+            if (user.CurrentPcl is not null) 
+                pcl = user.CurrentPcl;
+            return pcl;
+        }
+        private static void MakeVoxel(User user, UserPclFeatures pcl, double voxelSize)
+        {
+            Voxel voxel = new();
+
+            user.CurrentPcl ??= new();
+            user.CurrentPcl.PointCloud = voxel.Process(pcl.PointCloud, voxelSize);
+            user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
+        }
+
         private static string SetColorMap(User user, string colormap)
         {
             string mapInfo = $"Ок, теперь буду рисовать палитрой {colormap}";
@@ -86,14 +96,6 @@ namespace PointCloudHandlingBot
                     break;
             }
             return mapInfo;
-        }
-        private static void MakeVoxel(User user, UserPclFeatures pcl, double voxelSize)
-        {
-            Voxel voxel = new();
-
-            user.CurrentPcl ??= new();
-            user.CurrentPcl.PointCloud = voxel.Process(pcl.PointCloud, voxelSize);
-            user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
         }
     }
 }

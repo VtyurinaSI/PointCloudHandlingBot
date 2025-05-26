@@ -16,36 +16,6 @@ namespace PointCloudHandlingBot.PointCloudProcesses
     public static class Drawing
     {
 
-        private static float GetScale(PclLims lims,
-         int width = 800,
-         int height = 600,
-         int padding = 20)
-        {
-            float minX = lims.xMin;
-            float maxX = lims.xMax;
-            float minY = lims.yMin;
-            float maxY = lims.yMax;
-
-            float spanX = maxX - minX;
-            float spanY = maxY - minY;
-            if (spanX == 0) spanX = 1;
-            if (spanY == 0) spanY = 1;
-
-            float scaleX = (width - 2 * padding) / spanX;
-            float scaleY = (height - 2 * padding) / spanY;
-            return MathF.Min(scaleX, scaleY);
-        }
-
-        private static Image<Rgba32> SetEmptyImage(PclLims lims, float scale, int width = 800,
-         int height = 600)
-        {
-            Image<Rgba32> image = new(width, height);
-            var white = new Rgba32(255, 255, 255, 255);
-            for (int y = 0; y < height; y++)
-                for (int x = 0; x < width; x++)
-                    image[x, y] = white;
-            return image;
-        }
         /// <summary>
         /// Нарисовать изображение с использованием цветов из файла
         /// </summary>
@@ -62,7 +32,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
          int height = 600,
          int padding = 20)
         {
-            if (pcl.PointCloud== null || pcl.PointCloud.Count == 0)
+            if (pcl.PointCloud == null || pcl.PointCloud.Count == 0)
                 throw new ArgumentException("Нет точек для проекции", nameof(pcl.PointCloud));
 
             float scale = GetScale(pcl.PclLims);
@@ -93,6 +63,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             }
             return image;
         }
+
         internal static List<Rgba32> Coloring(UserPclFeatures pcl, Func<float, float, float, Rgba32> ColorMap)
         {
             int count = pcl.PointCloud.Count;
@@ -107,6 +78,24 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             return [.. colors];
         }
 
+        /// <summary>
+        /// «Cool» palette: R = t, G = 1–t, B = 1
+        /// </summary>
+        internal static Rgba32 MapCool(float z, float minZ, float maxZ)
+        {
+            float t = (z - minZ) / (maxZ - minZ);
+            t = Math.Clamp(t, 0f, 1f);
+
+            float r = t;
+            float g = 1f - t;
+            float b = 1f;
+
+            return new Rgba32(
+                (byte)(r * 255),
+                (byte)(g * 255),
+                (byte)(b * 255),
+                255);
+        }
 
         internal static Rgba32 MapJet(float z, float minZ, float maxZ)
         {
@@ -123,6 +112,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                 (byte)(b * 255),
                 255);
         }
+
         internal static Rgba32 MapPlasma(float z, float minZ, float maxZ)
         {
             float t = (z - minZ) / (maxZ - minZ);
@@ -152,24 +142,6 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             else
                 return Lerp(c3, c4, (t - 0.75f) / 0.25f);
         }
-        /// <summary>
-        /// «Cool» palette: R = t, G = 1–t, B = 1
-        /// </summary>
-        internal static Rgba32 MapCool(float z, float minZ, float maxZ)
-        {
-            float t = (z - minZ) / (maxZ - minZ);
-            t = Math.Clamp(t, 0f, 1f);
-
-            float r = t;
-            float g = 1f - t;
-            float b = 1f;
-
-            return new Rgba32(
-                (byte)(r * 255),
-                (byte)(g * 255),
-                (byte)(b * 255),
-                255);
-        }
 
         /// <summary>
         /// «Spring» palette: R = 1, G = t, B = 1–t
@@ -188,6 +160,37 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                 (byte)(g * 255),
                 (byte)(b * 255),
                 255);
+        }
+
+        private static float GetScale(PclLims lims,
+                                                         int width = 800,
+         int height = 600,
+         int padding = 20)
+        {
+            float minX = lims.xMin;
+            float maxX = lims.xMax;
+            float minY = lims.yMin;
+            float maxY = lims.yMax;
+
+            float spanX = maxX - minX;
+            float spanY = maxY - minY;
+            if (spanX == 0) spanX = 1;
+            if (spanY == 0) spanY = 1;
+
+            float scaleX = (width - 2 * padding) / spanX;
+            float scaleY = (height - 2 * padding) / spanY;
+            return MathF.Min(scaleX, scaleY);
+        }
+
+        private static Image<Rgba32> SetEmptyImage(PclLims lims, float scale, int width = 800,
+         int height = 600)
+        {
+            Image<Rgba32> image = new(width, height);
+            var white = new Rgba32(255, 255, 255, 255);
+            for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
+                    image[x, y] = white;
+            return image;
         }
     }
 }
