@@ -7,19 +7,25 @@ using System.Threading.Tasks;
 
 namespace PointCloudHandlingBot.PointCloudProcesses.PipelineSteps
 {
-    class Voxel
+    class Voxel : IPipelineSteps
     {
-        public List<Vector3> Process(List<Vector3> originalPoints, double voxelSize)
+        private double voxelSize;
+        internal Voxel(double _voxelSize)
         {
-            int numPoints = originalPoints.Count;
+            voxelSize=_voxelSize;
+        }
+        public UserPclFeatures Process(UserPclFeatures pcl)
+        {
+            
+            int numPoints = pcl.PointCloud.Count;
 
             var voxelMap = new Dictionary<(int, int, int), List<int>>();
 
             for (int i = 0; i < numPoints; i++)
             {
-                int voxelX = (int)Math.Floor(originalPoints[i].X / voxelSize);
-                int voxelY = (int)Math.Floor(originalPoints[i].Y / voxelSize);
-                int voxelZ = (int)Math.Floor(originalPoints[i].Z / voxelSize);
+                int voxelX = (int)Math.Floor(pcl.PointCloud[i].X / voxelSize);
+                int voxelY = (int)Math.Floor(pcl.PointCloud[i].Y / voxelSize);
+                int voxelZ = (int)Math.Floor(pcl.PointCloud[i].Z / voxelSize);
                 var voxelKey = (voxelX, voxelY, voxelZ);
 
                 if (!voxelMap.ContainsKey(voxelKey))
@@ -37,14 +43,16 @@ namespace PointCloudHandlingBot.PointCloudProcesses.PipelineSteps
 
                 foreach (var i in indices)
                 {
-                    sumX += originalPoints[i].X;
-                    sumY += originalPoints[i].Y;
-                    sumZ += originalPoints[i].Z;
+                    sumX += pcl.PointCloud[i].X;
+                    sumY += pcl.PointCloud[i].Y;
+                    sumZ += pcl.PointCloud[i].Z;
                 }
 
                 filteredPoints.Add(new Vector3(sumX, sumY, sumZ) / count);
             }
-            return filteredPoints;
+            pcl.PointCloud = filteredPoints;
+            return pcl;
         }
+
     }
 }

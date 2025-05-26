@@ -19,9 +19,6 @@ namespace PointCloudHandlingBot.PointCloudProcesses
         /// <summary>
         /// Нарисовать изображение с использованием цветов из файла
         /// </summary>
-        /// <param name="points">Облако точек</param>
-        /// <param name="colors">Цвета точек</param>
-        /// <param name="lims">Пределы координат</param>
         /// <param name="width">Ширина изображения</param>
         /// <param name="height">Высота изображение</param>
         /// <param name="padding">Отступы</param>
@@ -118,7 +115,6 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             float t = (z - minZ) / (maxZ - minZ);
             t = Math.Clamp(t, 0f, 1f);
 
-
             var c0 = new Rgba32(117, 11, 189, 255);
             var c1 = new Rgba32(184, 24, 188, 255);
             var c2 = new Rgba32(236, 28, 122, 255);
@@ -163,7 +159,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
         }
 
         private static float GetScale(PclLims lims,
-                                                         int width = 800,
+         int width = 800,
          int height = 600,
          int padding = 20)
         {

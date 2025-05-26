@@ -42,7 +42,7 @@ namespace PointCloudHandlingBot
                 await Task.Run(() => Console.WriteLine("Message is null"));
                 return;
             }
-            Voxel pclProc = new();
+            //Voxel pclProc = new();
             User user = botUsers.GetOrAdd(update.Message.Chat.Id, id => new User(update.Message.Chat.Id, update.Message.Chat.Username));
             (string? answer, Image<Rgba32>? image) reply = (null, null);
 
