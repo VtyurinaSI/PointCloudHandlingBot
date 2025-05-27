@@ -2,6 +2,7 @@
 using SixLabors.ImageSharp.ColorSpaces;
 using SixLabors.ImageSharp.ColorSpaces.Conversion;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,8 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using SixLabors.ImageSharp.Drawing.Processing;
+
 using static System.Formats.Asn1.AsnWriter;
 
 namespace PointCloudHandlingBot.PointCloudProcesses
@@ -25,15 +28,15 @@ namespace PointCloudHandlingBot.PointCloudProcesses
         /// <returns>Изображение</returns>
         public static Image<Rgba32> DrawProjection(
          UserPclFeatures pcl,
-         int width = 800,
-         int height = 600,
+          int width = 1920,
+         int height = 1080,
          int padding = 20)
         {
             if (pcl.PointCloud == null || pcl.PointCloud.Count == 0)
                 throw new ArgumentException("Нет точек для проекции", nameof(pcl.PointCloud));
 
             float scale = GetScale(pcl.PclLims);
-            var image = SetEmptyImage(pcl.PclLims, scale);
+            var image = SetEmptyImage(pcl.PclLims, ref scale);
 
             float minx = pcl.PclLims.xMin, miny = pcl.PclLims.yMin;
 
@@ -61,6 +64,34 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             return image;
         }
 
+        private static Image<Rgba32> SetEmptyImage(PclLims lims, ref float scale, int maxWidth = 1920, int maxHeight = 1080, int padding = 20)
+        {
+            float widthF = (lims.xMax - lims.xMin) * scale + 2 * padding;
+            float heightF = (lims.yMax - lims.yMin) * scale + 2 * padding;
+
+            int width = (int)Math.Ceiling(widthF);
+            int height = (int)Math.Ceiling(heightF);
+
+            if (width > maxWidth || height > maxHeight)
+            {
+                float widthRatio = (float)maxWidth / width;
+                float heightRatio = (float)maxHeight / height;
+                float k = Math.Min(widthRatio, heightRatio);
+
+                width = (int)(width * k);
+                height = (int)(height * k);
+                scale *= k;
+            }
+
+            Image<Rgba32> image = new(width, height);
+            var white = new Rgba32(255, 255, 255, 255);
+
+            for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
+                    image[x, y] = white;
+
+            return image;
+        }
         internal static List<Rgba32> Coloring(UserPclFeatures pcl, Func<float, float, float, Rgba32> ColorMap)
         {
             int count = pcl.PointCloud.Count;
@@ -159,8 +190,8 @@ namespace PointCloudHandlingBot.PointCloudProcesses
         }
 
         private static float GetScale(PclLims lims,
-         int width = 800,
-         int height = 600,
+         int width = 1920,
+         int height = 1080,
          int padding = 20)
         {
             float minX = lims.xMin;
@@ -177,16 +208,6 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             float scaleY = (height - 2 * padding) / spanY;
             return MathF.Min(scaleX, scaleY);
         }
-
-        private static Image<Rgba32> SetEmptyImage(PclLims lims, float scale, int width = 800,
-         int height = 600)
-        {
-            Image<Rgba32> image = new(width, height);
-            var white = new Rgba32(255, 255, 255, 255);
-            for (int y = 0; y < height; y++)
-                for (int x = 0; x < width; x++)
-                    image[x, y] = white;
-            return image;
-        }
+       
     }
 }
