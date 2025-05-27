@@ -24,7 +24,7 @@ namespace PointCloudHandlingBot
 
                 var receiverOptions = new ReceiverOptions
                 {
-                    AllowedUpdates = [UpdateType.Message],
+                    AllowedUpdates = new[] { UpdateType.CallbackQuery, UpdateType.Message },
                     DropPendingUpdates = true
                 };
 

@@ -11,10 +11,10 @@ namespace PointCloudHandlingBot
 {
     public class User
     {
-        public User(long chatId, string? userName)
+        public User(long chatId, string userName = "noname")
         {
             ChatId = chatId;
-            UserName = userName ?? "noname";
+            UserName = userName ;
         }
         public long ChatId { get; set; }
         public string UserName { get; set; } = null!;

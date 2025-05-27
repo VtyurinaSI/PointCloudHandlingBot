@@ -9,12 +9,23 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace PointCloudHandlingBot
 {
+
     class TextMessageHandling
     {
+        ITelegramBotClient botClient;
+        public TextMessageHandling(ITelegramBotClient botClient)
+        {
+            this.botClient = botClient;
+        }
+        public delegate Task KeyboardDelegate(ITelegramBotClient bot, long chatId);
+        public event KeyboardDelegate? OpenAnalizeKeyboardEvent;
+        public event KeyboardDelegate? OpenColorKeyboardEvent;
+
         private const string hello = """
                             Привет! Я умею обрабатывать объемные облака точек!
                             Рисую в палитрах:
@@ -25,11 +36,11 @@ namespace PointCloudHandlingBot
 
                             Чтобы их применить, перед отображением напиши мне /colorMap<палитра>, например, /colorMapCool.
                             """;
-        public static (string?, Image<Rgba32>?) WhatDoYouWant(User user, string textMsg)
+        public (string?, Image<Rgba32>?) WhatDoYouWant(User user, string textMsg)
         {
             (string? text, Image<Rgba32>? img) answer = (null, null);
             FileHandling file = new();
-            //UserPclFeatures pcl;
+            textMsg = textMsg.Trim();
             switch (textMsg)
             {
                 case "/start": answer = (hello, null); break;
@@ -41,24 +52,7 @@ namespace PointCloudHandlingBot
                     user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
                     answer = file.MakeResultPcl(user.ChatId, user.CurrentPcl);
                     break;
-                /*case string tr when tr.StartsWith("/transform"):
-                    Transform(user, tr.Substring(10).Replace('.', ','));
 
-                    answer = file.MakeResultPcl(user.ChatId, user.CurrentPcl);
-                    break;
-                case string v when v.StartsWith("/voxel"):
-                    string rest = v.Substring(6).Replace('.', ',');
-
-                    if (double.TryParse(rest, out double voxelSize))
-                    {
-                        var actPcl = GetActualPcl(user);
-                        MakeVoxel(user, actPcl, voxelSize);
-
-                        answer = file.MakeResultPcl(user.ChatId, user.CurrentPcl);
-                    }
-                    else answer = ("Не смог распарсить(", null);
-                    break;
-                */
                 case string m when m.StartsWith("/colorMap"):
                     string colormap = m.Substring(9);
                     answer.text = SetColorMap(user, colormap);
@@ -70,7 +64,12 @@ namespace PointCloudHandlingBot
 
 
                     break;
-
+                case "/analyze":
+                    OpenAnalizeKeyboardEvent?.Invoke(botClient,user.ChatId);
+                    break;
+                case "/setColor":
+                    OpenColorKeyboardEvent?.Invoke(botClient, user.ChatId);
+                    break;
                 default:
                     answer = ("че :/", null);
                     break;
@@ -85,32 +84,6 @@ namespace PointCloudHandlingBot
                 pcl = user.CurrentPcl;
             return pcl;
         }
-        /*
-        private static void Transform(User user, string parametrs)
-        {
-
-            List<double> param = parametrs.Split(':')
-                           .Select(d => double.Parse(d))
-                           .ToList();
-            Translate tr = new();
-            var pcl = GetActualPcl(user);
-            user.CurrentPcl ??= new();
-            tr.Process((user.CurrentPcl, pcl.PointCloud, param));
-            user.CurrentPcl.Colors = Drawing.Coloring(pcl, user.ColorMap);
-        }
-
-        
-        private static void MakeVoxel(User user, UserPclFeatures pcl, double voxelSize)
-        {
-            Voxel voxel = new();
-
-            user.CurrentPcl ??= new();
-            List<double> param = [];
-            param.Add(voxelSize);
-            voxel.Process((user.CurrentPcl, pcl.PointCloud, param));
-            user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
-        }
-        */
         private static string SetColorMap(User user, string colormap)
         {
             string mapInfo = $"Ок, теперь буду рисовать палитрой {colormap}";
