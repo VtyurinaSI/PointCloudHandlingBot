@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -17,11 +18,7 @@ namespace PointCloudHandlingBot
 
     class TextMessageHandling
     {
-        ITelegramBotClient botClient;
-        public TextMessageHandling(ITelegramBotClient botClient)
-        {
-            this.botClient = botClient;
-        }
+        private IPipelineSteps step;
         public delegate Task KeyboardDelegate(ITelegramBotClient bot, long chatId);
         public event KeyboardDelegate? OpenAnalizeKeyboardEvent;
         public event KeyboardDelegate? OpenColorKeyboardEvent;
@@ -36,43 +33,83 @@ namespace PointCloudHandlingBot
 
                             Чтобы их применить, перед отображением напиши мне /colorMap<палитра>, например, /colorMapCool.
                             """;
-        public (string?, Image<Rgba32>?) WhatDoYouWant(User user, string textMsg)
+        private (string?, Image<Rgba32>?) GoPipe(User user)
         {
+            FileHandling file = new();
+            user.Pipe.Condition = PipeLine.PipeCondition.None;
+            user.CurrentPcl ??= new();
+            user.CurrentPcl.PointCloud = new(user.OrigPcl.PointCloud);
+            user.Pipe.Execute(user.CurrentPcl);
+            user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
+            user.Pipe = new();
+            return file.MakeResultPcl(user.ChatId, user.CurrentPcl);
+
+        }
+        public (string?, Image<Rgba32>?) WhatDoYouWant(ITelegramBotClient botClient, User user, string textMsg)
+        {
+
             (string? text, Image<Rgba32>? img) answer = (null, null);
             FileHandling file = new();
             textMsg = textMsg.Trim();
-            switch (textMsg)
+            if (user.Pipe.Condition == PipeLine.PipeCondition.SettingStageType)
             {
-                case "/start": answer = (hello, null); break;
-                case string p when p.StartsWith("/pipe"):
-                    user.CurrentPcl ??= new();
-                    user.CurrentPcl.PointCloud = new(user.OrigPcl.PointCloud);
-                    var pipe = PipelineManager.ParseAndSet(p.Substring(5));
-                    pipe.Execute(user.CurrentPcl);
-                    user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
-                    answer = file.MakeResultPcl(user.ChatId, user.CurrentPcl);
-                    break;
+                if (textMsg == "gopipe") answer = GoPipe(user);
+                if (textMsg == "resetpipe")
+                {
+                    user.Pipe = new();
 
-                case string m when m.StartsWith("/colorMap"):
-                    string colormap = m.Substring(9);
-                    answer.text = SetColorMap(user, colormap);
-                    if (user.OrigPcl.PointCloud is null) break;
-                    var pcl = GetActualPcl(user);
-                    pcl.Colors = Drawing.Coloring(pcl, user.ColorMap);
+                    answer = file.MakeResultPcl(user.ChatId, user.OrigPcl);
+                    answer.text = """
+                        Составление порядка обработки отменено. 
+                        Напоминаю, как выглядит твое сырое облако точек. 
+                        Что теперь будем делать?
+                        """;
+                }
+                else
+                {
+                    user.Pipe.StageName = textMsg;
+                    answer.text = "Ок, теперь введи параметры";
+                    user.Pipe.Condition = PipeLine.PipeCondition.SettingStageParams;
+                }
+            }
+            else
+            {
+                if (user.Pipe.Condition == PipeLine.PipeCondition.SettingStageParams)
+                {
+                    user.Pipe.Condition = PipeLine.PipeCondition.SettingStageType;
+                    user.Pipe.StageParams = textMsg.Replace('.', ',').Split(':')
+                           .Select(d => double.Parse(d))
+                           .ToList();
+                    user.Pipe.CreateStep();
+                    OpenAnalizeKeyboardEvent?.Invoke(botClient, user.ChatId);
+                }
+                else
+                    switch (textMsg)
+                    {
+                        case "/start": answer = (hello, null); break;
+                        case string m when m.StartsWith("/colorMap"):
+                            string colormap = m.Substring(9);
+                            answer.text = SetColorMap(user, colormap);
+                            if (user.OrigPcl.PointCloud is null) break;
+                            var pcl = GetActualPcl(user);
+                            pcl.Colors = Drawing.Coloring(pcl, user.ColorMap);
 
-                    answer = file.MakeResultPcl(user.ChatId, pcl);
+                            answer = file.MakeResultPcl(user.ChatId, pcl);
+                            break;
+                        case "/analyze":
+                            user.Pipe = new();
+                            user.Pipe.Condition = PipeLine.PipeCondition.SettingStageType;
+                            OpenAnalizeKeyboardEvent?.Invoke(botClient, user.ChatId);
+                            break;
+                        case "/setColor":
+                            OpenColorKeyboardEvent?.Invoke(botClient, user.ChatId);
+                            break;
+                        default:
 
+                            answer = ("че :/", null);
 
-                    break;
-                case "/analyze":
-                    OpenAnalizeKeyboardEvent?.Invoke(botClient,user.ChatId);
-                    break;
-                case "/setColor":
-                    OpenColorKeyboardEvent?.Invoke(botClient, user.ChatId);
-                    break;
-                default:
-                    answer = ("че :/", null);
-                    break;
+                            break;
+                    }
             }
             return answer;
         }

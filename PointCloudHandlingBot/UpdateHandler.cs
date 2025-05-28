@@ -17,14 +17,21 @@ namespace PointCloudHandlingBot
 
     class UpdateHandler : IUpdateHandler
     {
-        private async Task SendLogToBot(long id, string msg)
+        public UpdateHandler()
+        {
+            text = new();
+            text.OpenAnalizeKeyboardEvent += OpenPipelineKeyboard;
+            text.OpenColorKeyboardEvent += OpenColorKeyboard;
+            file = new();
+        }
+        private readonly FileHandling file;
+        private async Task SendLogToBot(ITelegramBotClient bot, CancellationToken token, long id, string msg)
         {
             await bot.SendMessage(id,
                                 msg,
                                 cancellationToken: token);
         }
-        ITelegramBotClient bot = null!;
-        CancellationToken token;
+
         public delegate Task MessageHandler(User user, string msg);
         public event MessageHandler? OnHandleUpdateCompleted;
 
@@ -33,26 +40,21 @@ namespace PointCloudHandlingBot
         {
             await Task.Run(() => Console.WriteLine($"Ошибка: {exception.Message}\n{exception.StackTrace}"), cancellationToken);
         }
-
+        private TextMessageHandling text;
         public async Task HandleUpdateAsync(ITelegramBotClient bot, Update update, CancellationToken token)
         {
-            this.bot = bot;
-            this.token = token;
             (string? answer, Image<Rgba32>? image) reply = (null, null);
 
 
-            User user = new(0);// = botUsers.GetOrAdd(update.Message.Chat.Id, id => new User(update.Message.Chat.Id, update.Message.Chat.Username));
+            User user = new(0);
             string? textMsg;
             if (update.Type == UpdateType.CallbackQuery)
             {
                 var callbackQuery = update.CallbackQuery;
                 textMsg = callbackQuery.Data;
                 user = botUsers.GetOrAdd(update.CallbackQuery.Message.Chat.Id, id => new User(update.CallbackQuery.Message.Chat.Id, update.CallbackQuery.Message.Chat.Username));
-                TextMessageHandling text = new(bot);
-                //text.OpenKeyboardEvent += OpenPipelineKeyboard;
-                text.OpenColorKeyboardEvent += OpenColorKeyboard;
-                reply = text.WhatDoYouWant(user, textMsg);
-                //await HandleCallbackQueryAsync(bot, callbackQuery, token);
+
+                reply = text.WhatDoYouWant(bot, user, textMsg);
             }
 
             if (update.Message is not null)
@@ -63,15 +65,11 @@ namespace PointCloudHandlingBot
                 if (textMsg is not null)
                 {
                     OnHandleUpdateStarted?.Invoke(user, textMsg);
-                    TextMessageHandling text = new(bot);
-                    text.OpenAnalizeKeyboardEvent += OpenPipelineKeyboard;
-                    text.OpenColorKeyboardEvent += OpenColorKeyboard;
-                    reply = text.WhatDoYouWant(user, textMsg);
+                    reply = text.WhatDoYouWant(bot, user, textMsg);
                 }
                 if (update.Message.Document is not null)
                 {
-                    FileHandling file = new();
-                    file.PclProcessMessageEvent += SendLogToBot;
+                    //file.PclProcessMessageEvent += SendLogToBot;
                     var doc = update.Message.Document;
                     if (doc.FileName is null) return;
                     OnHandleUpdateStarted?.Invoke(user, $"Received file \"{doc.FileName}\"");
@@ -81,15 +79,13 @@ namespace PointCloudHandlingBot
 
 
             }
-            if (reply.answer is not null) await SendLogToBot(user.ChatId, reply.answer);
+            if (reply.answer is not null) await SendLogToBot(bot, token, user.ChatId, reply.answer);
             if (reply.image is not null) await SendProjectionAsync(reply.image, user);
 
         }
 
         private async Task OpenColorKeyboard(ITelegramBotClient bot, long chatId)
         {
-            OnHandleUpdateCompleted?.Invoke(null, "Открываю клавиатуру для выбора этапов обработки облака точек");
-
             InlineKeyboardMarkup inlineKeyboard = new(
             new[]
             {
@@ -124,11 +120,13 @@ namespace PointCloudHandlingBot
             new[]
             {
 
-                new []
-                {
-                    InlineKeyboardButton.WithCallbackData("Выбрать colorMap", "/setColor"),
-                    InlineKeyboardButton.WithCallbackData("Задать параметры анализа", "/pipe"),
-                }
+                    new[] {InlineKeyboardButton.WithCallbackData("Воксельный фильтр", "voxel") },
+                   new[] { InlineKeyboardButton.WithCallbackData("DBSCAN", "dbscan")},
+                    new[] {InlineKeyboardButton.WithCallbackData("Сглаживание по Гауссу", "gauss")},
+                    new[] {InlineKeyboardButton.WithCallbackData("Поворот и перемещение", "transform")},
+                    new[] {InlineKeyboardButton.WithCallbackData("Начать расчет", "gopipe")},
+                    new[] {InlineKeyboardButton.WithCallbackData("Отменить обработку", "resetpipe")},
+
             });
             await bot.SendMessage(
                     chatId: chatId,

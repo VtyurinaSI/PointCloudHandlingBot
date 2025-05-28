@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace PointCloudHandlingBot.PointCloudProcesses
 {
-    interface IPipelineSteps
+    public interface IPipelineSteps
     {
-        UserPclFeatures Process(UserPclFeatures pcl);
+        public UserPclFeatures Process(UserPclFeatures pcl);
 
     }
 }

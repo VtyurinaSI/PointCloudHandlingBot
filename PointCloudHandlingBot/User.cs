@@ -22,8 +22,10 @@ namespace PointCloudHandlingBot
         public Func<float, float, float, Rgba32> ColorMap = Drawing.MapSpring;
 
         public UserPclFeatures OrigPcl { get; set; } = new();
-        public UserPclFeatures? CurrentPcl 
-        { get; 
-            set; }
+
+        public UserPclFeatures? CurrentPcl { get;  set; }
+
+        public PipeLine Pipe { get; set; } = new();
+
     }
 }
