@@ -53,110 +53,157 @@ namespace PointCloudHandlingBot
 
         public void WhatDoYouWant(ITelegramBotClient botClient, User user, string textMsg)
         {
-
-            string answer = string.Empty;
-            FileHandling file = new();
             textMsg = textMsg.Trim();
             switch (user.Pipe.Condition)
             {
                 case AnalyzePipeLine.PipeCondition.SettingStageType:
-
-                    switch (textMsg)
-                    {
-                        case "gopipe":
-                            GoPipe(user);
-                            Task.Run(() =>
-                                MsgPipeLine.SendAll(botClient, user,
-                                    new ImageMsg(Drawing.Make3dImg),
-                                    new KeyboardMsg(keyboards.MainMenu)
-                                ));
-                            break;
-                        case "resetpipe":
-
-                            user.Pipe = new();
-                            answer = """
-                        Составление порядка обработки отменено. 
-                        Напоминаю, как выглядит твое сырое облако точек. 
-                        Что теперь будем делать?
-                        """;
-
-                            Task.Run(() =>
-                                MsgPipeLine.SendAll(botClient, user,
-                                    new TextMsg(answer),
-                                    new ImageMsg(Drawing.Make3dImg),
-                                    new KeyboardMsg(keyboards.MainMenu)
-                                ));
-                            break;
-                        default:
-                            user.Pipe.StageName = textMsg;
-                            answer = "Ок, теперь введи параметры";
-                            Task.Run(() =>
-                                MsgPipeLine.SendAll(botClient, user,
-                                    new TextMsg(answer)
-                                ));
-                            user.Pipe.Condition = AnalyzePipeLine.PipeCondition.SettingStageParams;
-                            break;
-                    }
-
+                    HandleSettingStageType(botClient, user, textMsg);
                     break;
                 case AnalyzePipeLine.PipeCondition.SettingStageParams:
-                    {
-                        user.Pipe.Condition = AnalyzePipeLine.PipeCondition.SettingStageType;
-                        user.Pipe.StageParams = textMsg.Replace('.', ',').Split(':')
-                               .Select(d => double.Parse(d))
-                               .ToList();
-                        user.Pipe.CreateStep();
-                        Task.Run(() =>
-                                MsgPipeLine.SendAll(botClient, user,
-                                    new KeyboardMsg(keyboards.Analyze)
-                                ));
-                    }
+                    HandleSettingStageParams(botClient, user, textMsg);
                     break;
                 default:
-                    switch (textMsg)
-                    {
-                        case "/start": answer = hello; break;
-                        case string m when m.StartsWith("/colorMap"):
-                            string colormap = m.Substring(9);
-                            answer = SetColorMap(user, colormap);
-                            if (user.OrigPcl.PointCloud is null) break;
-                            var pcl = GetActualPcl(user);
-                            pcl.Colors = Drawing.Coloring(pcl, user.ColorMap);
-                            Task.Run(() =>
-                            MsgPipeLine.SendAll(botClient, user,
-                                new ImageMsg(Drawing.Make3dImg),
-                                new KeyboardMsg(keyboards.MainMenu)
-                            ));
-                            break;
-                        case "/analyze":
-                            user.Pipe = new();
-                            user.Pipe.Condition = AnalyzePipeLine.PipeCondition.SettingStageType;
-                            OpenAnalizeKeyboardEvent?.Invoke(botClient, user.ChatId);
-                            answer = "Пошли в анализ";
-                            Task.Run(() =>
-                            MsgPipeLine.SendAll(botClient, user,
-                                new KeyboardMsg(keyboards.Analyze)
-                            ));
-                            break;
-                        case "/setColor":
-                            answer = "Пошли в покрас";
-                            Task.Run(() =>
-                            MsgPipeLine.SendAll(botClient, user,
-                                new KeyboardMsg(keyboards.ColorMap)
-                            ));
-                            break;
-                        default:
-
-                            answer = "че :/";
-                            Task.Run(() =>
-                            MsgPipeLine.SendAll(botClient, user,
-                                new TextMsg(answer)
-                            ));
-                            break;
-                    }
+                    HandleDefault(botClient, user, textMsg);
                     break;
             }
+        }
 
+        private void HandleSettingStageType(ITelegramBotClient botClient, User user, string textMsg)
+        {
+            switch (textMsg)
+            {
+                case "gopipe":
+                    HandleGoPipe(botClient, user);
+                    break;
+                case "resetpipe":
+                    HandleResetPipe(botClient, user);
+                    break;
+                default:
+                    HandleSetStageName(botClient, user, textMsg);
+                    break;
+            }
+        }
+
+        private void HandleGoPipe(ITelegramBotClient botClient, User user)
+        {
+            GoPipe(user);
+            Task.Run(() =>
+                MsgPipeLine.SendAll(botClient, user,
+                    new ImageMsg(Drawing.Make3dImg),
+                    new KeyboardMsg(keyboards.MainMenu)
+                ));
+        }
+
+        private void HandleResetPipe(ITelegramBotClient botClient, User user)
+        {
+            user.Pipe = new();
+            string answer = """
+        Составление порядка обработки отменено. 
+        Напоминаю, как выглядит твое сырое облако точек. 
+        Что теперь будем делать?
+        """;
+            Task.Run(() =>
+                MsgPipeLine.SendAll(botClient, user,
+                    new TextMsg(answer),
+                    new ImageMsg(Drawing.Make3dImg),
+                    new KeyboardMsg(keyboards.MainMenu)
+                ));
+        }
+
+        private void HandleSetStageName(ITelegramBotClient botClient, User user, string textMsg)
+        {
+            user.Pipe.StageName = textMsg;
+            string answer = "Ок, теперь введи параметры";
+            Task.Run(() =>
+                MsgPipeLine.SendAll(botClient, user,
+                    new TextMsg(answer)
+                ));
+            user.Pipe.Condition = AnalyzePipeLine.PipeCondition.SettingStageParams;
+        }
+
+        private void HandleSettingStageParams(ITelegramBotClient botClient, User user, string textMsg)
+        {
+            user.Pipe.Condition = AnalyzePipeLine.PipeCondition.SettingStageType;
+            user.Pipe.StageParams = textMsg.Replace('.', ',').Split(':')
+                .Select(d => double.Parse(d))
+                .ToList();
+            user.Pipe.CreateStep();
+            Task.Run(() =>
+                MsgPipeLine.SendAll(botClient, user,
+                    new KeyboardMsg(keyboards.Analyze)
+                ));
+        }
+
+        private void HandleDefault(ITelegramBotClient botClient, User user, string textMsg)
+        {
+            switch (textMsg)
+            {
+                case "/start":
+                    HandleStart(botClient, user);
+                    break;
+                case "/analyze":
+                    HandleAnalyze(botClient, user);
+                    break;
+                case "/setColor":
+                    HandleSetColor(botClient, user);
+                    break;
+                default:
+                    if (textMsg.StartsWith("/colorMap"))
+                        HandleColorMap(botClient, user, textMsg);
+                    else
+                        HandleUnknown(botClient, user);
+                    break;
+            }
+        }
+
+        private void HandleStart(ITelegramBotClient botClient, User user)
+        {
+            Task.Run(() =>
+                MsgPipeLine.SendAll(botClient, user,
+                    new TextMsg(hello)
+                ));
+        }
+
+        private void HandleColorMap(ITelegramBotClient botClient, User user, string textMsg)
+        {
+            string colormap = textMsg.Substring(9);
+            string answer = SetColorMap(user, colormap);
+            if (user.OrigPcl.PointCloud is null) return;
+            var pcl = GetActualPcl(user);
+            pcl.Colors = Drawing.Coloring(pcl, user.ColorMap);
+            Task.Run(() =>
+                MsgPipeLine.SendAll(botClient, user,
+                    new ImageMsg(Drawing.Make3dImg),
+                    new KeyboardMsg(keyboards.MainMenu)
+                ));
+        }
+
+        private void HandleAnalyze(ITelegramBotClient botClient, User user)
+        {
+            user.Pipe = new();
+            user.Pipe.Condition = AnalyzePipeLine.PipeCondition.SettingStageType;
+
+            Task.Run(() =>
+                MsgPipeLine.SendAll(botClient, user,
+                    new KeyboardMsg(keyboards.Analyze)
+                ));
+        }
+
+        private void HandleSetColor(ITelegramBotClient botClient, User user)
+        {
+            Task.Run(() =>
+                MsgPipeLine.SendAll(botClient, user,
+                    new KeyboardMsg(keyboards.ColorMap)
+                ));
+        }
+
+        private void HandleUnknown(ITelegramBotClient botClient, User user)
+        {
+            string answer = "че :/";
+            Task.Run(() =>
+                MsgPipeLine.SendAll(botClient, user,
+                    new TextMsg(answer)
+                ));
         }
 
         private static UserPclFeatures GetActualPcl(User user)
