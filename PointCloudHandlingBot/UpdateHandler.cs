@@ -1,5 +1,6 @@
 ﻿using PointCloudHandlingBot.MsgPipeline;
 using PointCloudHandlingBot.PointCloudProcesses;
+using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -11,19 +12,15 @@ namespace PointCloudHandlingBot
 
     class UpdateHandler : IUpdateHandler
     {
-        public UpdateHandler()
+        public UpdateHandler(ITelegramBotClient bot)
         {
             text = new();
-            //text.OpenAnalizeKeyboardEvent += OpenPipelineKeyboard;
-            //text.OpenColorKeyboardEvent += OpenColorKeyboard;
-            //text.SendImageEvent += SendPlot;
-            //text.OpenMainEvent += OpenBaseKeyboard;
-            //text.SendTextEvent += SendLogToBot;
+            this.bot = bot;
             file = new();
         }
         ITelegramBotClient bot;
         private readonly FileHandling file;
-        
+
 
         public delegate Task MessageHandler(User user, string msg);
         public event MessageHandler? OnHandleUpdateCompleted;
@@ -36,48 +33,92 @@ namespace PointCloudHandlingBot
         private TextMessageHandling text;
         public async Task HandleUpdateAsync(ITelegramBotClient bot, Update update, CancellationToken token)
         {
-            this.bot = bot;
-            string reply = string.Empty;
+            var user = GetUserFromUpdate(update);
+            if (user is null)
+                return;
 
-
-            User user = new(0);
-            string? textMsg;
-            if (update.Type == UpdateType.CallbackQuery)
+            List<IMsgPipelineSteps> message = [];
+            switch (update.Type)
             {
-                var callbackQuery = update.CallbackQuery;
-                textMsg = callbackQuery.Data;
-                user = botUsers.GetOrAdd(update.CallbackQuery.Message.Chat.Id, id => new User(update.CallbackQuery.Message.Chat.Id, update.CallbackQuery.Message.Chat.Username));
+                case UpdateType.CallbackQuery:
+                    message = HandleCallbackQuery(update.CallbackQuery, user);
+                    break;
 
-                text.WhatDoYouWant(bot, user, textMsg);
+                case UpdateType.Message:
+                    if (update.Message is not null)
+                        message = await HandleMessageAsync(update.Message, user);
+                    break;
             }
 
-            if (update.Message is not null)
-            {
-                user = botUsers.GetOrAdd(update.Message.Chat.Id, id => new User(update.Message.Chat.Id, update.Message.Chat.Username));
+            foreach (var msg in message)
+                await msg.Send(bot, user);
+        }
 
-                textMsg = update.Message.Text;
-                if (textMsg is not null)
-                {
-                    OnHandleUpdateStarted?.Invoke(user, textMsg); ;
-                    text.WhatDoYouWant(bot, user, textMsg);
-                }
-                if (update.Message.Document is not null)
-                {
-                    var doc = update.Message.Document;
-                    if (doc.FileName is null) return;
-                    OnHandleUpdateStarted?.Invoke(user, $"Received file \"{doc.FileName}\"");
-                    reply = await file.ReadFile(bot, user, doc);
-                    var keyboard = new Keyboards ();
-                    await Task.Run(() =>
-                            MsgPipeLine.SendAll(botClient, user,
-                                new ImageMsg(Drawing.Make3dImg),
-                                new KeyboardMsg(keyboard.MainMenu)
-                            ));
-                }
+        private User? GetUserFromUpdate(Update update)
+        {
+            switch (update.Type)
+            {
+                case UpdateType.CallbackQuery when update.CallbackQuery?.Message != null:
+                    {
+                        var chatId = update.CallbackQuery.Message.Chat.Id;
+                        var userName = update.CallbackQuery.Message.Chat.Username ?? "noname";
+                        return botUsers.GetOrAdd(chatId, id => new User(chatId, userName));
+                    }
+                case UpdateType.Message when update.Message != null:
+                    {
+                        var chatId = update.Message.Chat.Id;
+                        var userName = update.Message.Chat.Username ?? "noname";
+                        return botUsers.GetOrAdd(chatId, id => new User(chatId, userName));
+                    }
+                default:
+                    return null;
             }
         }
 
-        
-        
+        private List<IMsgPipelineSteps> HandleCallbackQuery(CallbackQuery callbackQuery, User user)
+        {
+            var textMsg = callbackQuery.Data;
+            return text.WhatDoYouWant(user, textMsg);
+        }
+
+        private async Task<List<IMsgPipelineSteps>> HandleMessageAsync(Message message, User user)
+        {
+            var textMsg = message.Text;
+
+            if (textMsg is not null)
+            {
+                OnHandleUpdateStarted?.Invoke(user, textMsg);
+                return text.WhatDoYouWant(user, textMsg);
+            }
+            if (message.Document is not null)
+            {
+                List<IMsgPipelineSteps> docRes = await HandleDocumentAsync(user, message.Document);
+                return docRes;
+            }
+            return new List<IMsgPipelineSteps>
+            {
+                new TextMsg("Я не понимаю, что вы хотите от меня!"),
+                new KeyboardMsg(new Keyboards().MainMenu)
+            };
+        }
+
+        private async Task<List<IMsgPipelineSteps>> HandleDocumentAsync(User user, Document doc)
+        {
+            var keyboard = new Keyboards();
+            if (doc.FileName is null) return new List<IMsgPipelineSteps>
+            {
+                new TextMsg("Ошибка в имени документа"),
+                new KeyboardMsg(keyboard.MainMenu)
+            };
+            OnHandleUpdateStarted?.Invoke(user, $"Received file \"{doc.FileName}\"");
+            var reply = await file.ReadFile(bot, user, doc);
+
+            return new List<IMsgPipelineSteps>
+            {
+                new TextMsg(reply),
+                new ImageMsg(Drawing.Make3dImg),
+                new KeyboardMsg(keyboard.MainMenu)
+            };
+        }
     }
 }

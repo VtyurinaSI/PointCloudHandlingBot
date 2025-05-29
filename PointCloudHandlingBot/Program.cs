@@ -15,7 +15,7 @@ namespace PointCloudHandlingBot
         {
             var cts = new CancellationTokenSource();
             
-            var handler = new UpdateHandler();
+            var handler = new UpdateHandler(botClient);
             try
             {
                 var me = await botClient.GetMe(cts.Token);

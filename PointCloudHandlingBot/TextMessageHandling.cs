@@ -20,15 +20,6 @@ namespace PointCloudHandlingBot
 
     class TextMessageHandling
     {
-        private IAnalyzePipelineSteps step;
-        public delegate Task KeyboardDelegate(ITelegramBotClient bot, long chatId);
-        public event KeyboardDelegate? OpenAnalizeKeyboardEvent;
-        public event KeyboardDelegate? OpenColorKeyboardEvent;
-        public event KeyboardDelegate? OpenMainEvent;
-        public delegate Task SendImageDelegate(User user);
-        public event SendImageDelegate? SendImageEvent;
-        public delegate Task SendTextDelegate(User user, string msg);
-        public event SendTextDelegate? SendTextEvent;
         private const string hello = """
                             Привет! Я умею обрабатывать объемные облака точек!
                             Рисую в палитрах:
@@ -51,50 +42,38 @@ namespace PointCloudHandlingBot
             user.Pipe.Condition = AnalyzePipeLine.PipeCondition.None;
         }
 
-        public void WhatDoYouWant(ITelegramBotClient botClient, User user, string textMsg)
+        public List<IMsgPipelineSteps> WhatDoYouWant(User user, string textMsg)
         {
             textMsg = textMsg.Trim();
-            switch (user.Pipe.Condition)
+            return user.Pipe.Condition switch
             {
-                case AnalyzePipeLine.PipeCondition.SettingStageType:
-                    HandleSettingStageType(botClient, user, textMsg);
-                    break;
-                case AnalyzePipeLine.PipeCondition.SettingStageParams:
-                    HandleSettingStageParams(botClient, user, textMsg);
-                    break;
-                default:
-                    HandleDefault(botClient, user, textMsg);
-                    break;
-            }
+                AnalyzePipeLine.PipeCondition.SettingStageType => HandleSettingStageType(user, textMsg),
+                AnalyzePipeLine.PipeCondition.SettingStageParams => HandleSettingStageParams(user, textMsg),
+                _ => HandleDefault(user, textMsg)
+            };
         }
 
-        private void HandleSettingStageType(ITelegramBotClient botClient, User user, string textMsg)
+        private List<IMsgPipelineSteps> HandleSettingStageType(User user, string textMsg)
         {
-            switch (textMsg)
+            return textMsg switch
             {
-                case "gopipe":
-                    HandleGoPipe(botClient, user);
-                    break;
-                case "resetpipe":
-                    HandleResetPipe(botClient, user);
-                    break;
-                default:
-                    HandleSetStageName(botClient, user, textMsg);
-                    break;
-            }
+                "gopipe" => HandleGoPipe(user),
+                "resetpipe" => HandleResetPipe(user),
+                _ => HandleSetStageName(user, textMsg)
+            };
         }
 
-        private void HandleGoPipe(ITelegramBotClient botClient, User user)
+        private List<IMsgPipelineSteps> HandleGoPipe(User user)
         {
             GoPipe(user);
-            Task.Run(() =>
-                MsgPipeLine.SendAll(botClient, user,
-                    new ImageMsg(Drawing.Make3dImg),
-                    new KeyboardMsg(keyboards.MainMenu)
-                ));
+            return
+            [
+                new ImageMsg(Drawing.Make3dImg),
+                new KeyboardMsg(keyboards.MainMenu)
+            ];
         }
 
-        private void HandleResetPipe(ITelegramBotClient botClient, User user)
+        private List<IMsgPipelineSteps> HandleResetPipe(User user)
         {
             user.Pipe = new();
             string answer = """
@@ -102,110 +81,71 @@ namespace PointCloudHandlingBot
         Напоминаю, как выглядит твое сырое облако точек. 
         Что теперь будем делать?
         """;
-            Task.Run(() =>
-                MsgPipeLine.SendAll(botClient, user,
-                    new TextMsg(answer),
-                    new ImageMsg(Drawing.Make3dImg),
-                    new KeyboardMsg(keyboards.MainMenu)
-                ));
+            return
+            [
+                new TextMsg(answer),
+                new ImageMsg(Drawing.Make3dImg),
+                new KeyboardMsg(keyboards.MainMenu)
+            ];
         }
 
-        private void HandleSetStageName(ITelegramBotClient botClient, User user, string textMsg)
+        private List<IMsgPipelineSteps> HandleSetStageName(User user, string textMsg)
         {
             user.Pipe.StageName = textMsg;
-            string answer = "Ок, теперь введи параметры";
-            Task.Run(() =>
-                MsgPipeLine.SendAll(botClient, user,
-                    new TextMsg(answer)
-                ));
             user.Pipe.Condition = AnalyzePipeLine.PipeCondition.SettingStageParams;
+            return [new TextMsg("Ок, теперь введи параметры")];
         }
 
-        private void HandleSettingStageParams(ITelegramBotClient botClient, User user, string textMsg)
+        private List<IMsgPipelineSteps> HandleSettingStageParams(User user, string textMsg)
         {
             user.Pipe.Condition = AnalyzePipeLine.PipeCondition.SettingStageType;
             user.Pipe.StageParams = textMsg.Replace('.', ',').Split(':')
                 .Select(d => double.Parse(d))
                 .ToList();
             user.Pipe.CreateStep();
-            Task.Run(() =>
-                MsgPipeLine.SendAll(botClient, user,
-                    new KeyboardMsg(keyboards.Analyze)
-                ));
+            return [new KeyboardMsg(keyboards.Analyze)];
         }
 
-        private void HandleDefault(ITelegramBotClient botClient, User user, string textMsg)
+        private List<IMsgPipelineSteps> HandleDefault(User user, string textMsg)
         {
             switch (textMsg)
             {
                 case "/start":
-                    HandleStart(botClient, user);
-                    break;
+                    return [new TextMsg(hello)];
+
                 case "/analyze":
-                    HandleAnalyze(botClient, user);
-                    break;
+                    user.Pipe = new();
+                    user.Pipe.Condition = AnalyzePipeLine.PipeCondition.SettingStageType;
+                    return [new KeyboardMsg(keyboards.Analyze)];
+
                 case "/setColor":
-                    HandleSetColor(botClient, user);
-                    break;
+                    return [new KeyboardMsg(keyboards.ColorMap)];
+
+                case string s when s.StartsWith("/setColor"):
+                    return ApplyColorMap(user, textMsg);
+
                 default:
-                    if (textMsg.StartsWith("/colorMap"))
-                        HandleColorMap(botClient, user, textMsg);
-                    else
-                        HandleUnknown(botClient, user);
-                    break;
+                    return [new TextMsg("че :/")];
             }
         }
-
-        private void HandleStart(ITelegramBotClient botClient, User user)
-        {
-            Task.Run(() =>
-                MsgPipeLine.SendAll(botClient, user,
-                    new TextMsg(hello)
-                ));
-        }
-
-        private void HandleColorMap(ITelegramBotClient botClient, User user, string textMsg)
+        private List<IMsgPipelineSteps> ApplyColorMap(User user, string textMsg)
         {
             string colormap = textMsg.Substring(9);
-            string answer = SetColorMap(user, colormap);
-            if (user.OrigPcl.PointCloud is null) return;
-            var pcl = GetActualPcl(user);
-            pcl.Colors = Drawing.Coloring(pcl, user.ColorMap);
-            Task.Run(() =>
-                MsgPipeLine.SendAll(botClient, user,
+            SetColorMap(user, colormap);
+
+            if (user.OrigPcl.PointCloud is not null)
+            {
+                var pcl = GetActualPcl(user);
+                pcl.Colors = Drawing.Coloring(pcl, user.ColorMap);
+                return [
+                    new TextMsg("Теперь буду рисовать так:"),
                     new ImageMsg(Drawing.Make3dImg),
-                    new KeyboardMsg(keyboards.MainMenu)
-                ));
+                    new KeyboardMsg(keyboards.MainMenu)];
+            }
+            else
+                return [new TextMsg($"Теперь буду рисовать в {colormap}")];
+
         }
-
-        private void HandleAnalyze(ITelegramBotClient botClient, User user)
-        {
-            user.Pipe = new();
-            user.Pipe.Condition = AnalyzePipeLine.PipeCondition.SettingStageType;
-
-            Task.Run(() =>
-                MsgPipeLine.SendAll(botClient, user,
-                    new KeyboardMsg(keyboards.Analyze)
-                ));
-        }
-
-        private void HandleSetColor(ITelegramBotClient botClient, User user)
-        {
-            Task.Run(() =>
-                MsgPipeLine.SendAll(botClient, user,
-                    new KeyboardMsg(keyboards.ColorMap)
-                ));
-        }
-
-        private void HandleUnknown(ITelegramBotClient botClient, User user)
-        {
-            string answer = "че :/";
-            Task.Run(() =>
-                MsgPipeLine.SendAll(botClient, user,
-                    new TextMsg(answer)
-                ));
-        }
-
         private static UserPclFeatures GetActualPcl(User user)
         {
             UserPclFeatures pcl = user.OrigPcl;
@@ -213,9 +153,8 @@ namespace PointCloudHandlingBot
                 pcl = user.CurrentPcl;
             return pcl;
         }
-        private string SetColorMap(User user, string colormap)
+        private void SetColorMap(User user, string colormap)
         {
-            string mapInfo = $"Теперь буду рисовать так";
             user.ColorMap = colormap switch
             {
                 "Jet" => Drawing.MapJet,
@@ -224,8 +163,6 @@ namespace PointCloudHandlingBot
                 "Spring" => Drawing.MapSpring,
                 _ => Drawing.MapSpring,
             };
-            SendTextEvent?.Invoke(user, mapInfo);
-            return mapInfo;
         }
     }
 }
