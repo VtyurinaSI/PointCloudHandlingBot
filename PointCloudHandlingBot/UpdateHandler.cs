@@ -1,22 +1,10 @@
-﻿using OxyPlot;
-using OxyPlot;
-using OxyPlot.Axes;
-using OxyPlot.Axes;
-using OxyPlot.ImageSharp;
-using OxyPlot.Series;
-using OxyPlot.Series;
-using OxyPlot.SkiaSharp;
-using SixLabors.ImageSharp.ColorSpaces;
-
-//using SixLabors.ImageSharp;
-//using SixLabors.ImageSharp.PixelFormats;
+﻿using PointCloudHandlingBot.PointCloudProcesses;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using static PointCloudHandlingBot.Program;
-using static System.Net.Mime.MediaTypeNames;
 namespace PointCloudHandlingBot
 {
 
@@ -34,10 +22,7 @@ namespace PointCloudHandlingBot
         }
         ITelegramBotClient bot;
         private readonly FileHandling file;
-        private async Task SendLogToBot(User user, string msg)
-        {
-            await bot.SendMessage(user.ChatId, msg);
-        }
+        
 
         public delegate Task MessageHandler(User user, string msg);
         public event MessageHandler? OnHandleUpdateCompleted;
@@ -62,7 +47,7 @@ namespace PointCloudHandlingBot
                 textMsg = callbackQuery.Data;
                 user = botUsers.GetOrAdd(update.CallbackQuery.Message.Chat.Id, id => new User(update.CallbackQuery.Message.Chat.Id, update.CallbackQuery.Message.Chat.Username));
 
-                reply = text.WhatDoYouWant(bot, user, textMsg);
+                text.WhatDoYouWant(bot, user, textMsg);
             }
 
             if (update.Message is not null)
@@ -73,7 +58,7 @@ namespace PointCloudHandlingBot
                 if (textMsg is not null)
                 {
                     OnHandleUpdateStarted?.Invoke(user, textMsg); ;
-                    reply = text.WhatDoYouWant(bot, user, textMsg);
+                    text.WhatDoYouWant(bot, user, textMsg);
                 }
                 if (update.Message.Document is not null)
                 {
@@ -85,7 +70,6 @@ namespace PointCloudHandlingBot
                     await OpenBaseKeyboard(bot, user.ChatId);
                 }
             }
-            //if (reply != string.Empty) await SendLogToBot(bot, token, user.ChatId, reply);
         }
 
         private async Task OpenColorKeyboard(ITelegramBotClient bot, long chatId)
@@ -103,82 +87,17 @@ namespace PointCloudHandlingBot
                     text: "Выберите вариант:",
                     replyMarkup: inlineKeyboard);
         }
+        private async Task SendLogToBot(User user, string msg)
+        {
+            await bot.SendMessage(user.ChatId, msg);
+        }
 
         public async Task SendPlot(User user)
         {
-            Task.Run(() => SendLogToBot(user, "Секунду, отрисовываю..."));
-            var pcl = user.CurrentPcl is null ? user.OrigPcl : user.CurrentPcl;
 
-            var lims = pcl.PclLims;
-            double xMin = lims.xMin, xMax = lims.xMax;
-            double yMin = lims.yMin, yMax = lims.yMax;
-
-            double xRange = xMax - xMin;
-            double yRange = yMax - yMin;
-
-            int N = 10;
-            double step = Math.Max(xRange, yRange) / N;
-            double minor = step / 5;
-            var model = new PlotModel
-            {
-                Title = "Проекция облака точек",
-                TitleFontSize = 24,
-                SubtitleFontSize = 0,
-                TextColor = OxyColors.Black
-            };
-            var xAxis = new LinearAxis
-            {
-                Position = AxisPosition.Bottom,
-                Title = "X",
-                TitleFontSize = 18,
-                FontSize = 16,
-                MajorGridlineStyle = LineStyle.Solid,
-                MinorGridlineStyle = LineStyle.Dot,
-                Minimum = xMin,
-                Maximum = xMax,
-                MajorStep = step,
-                MinorStep = minor
-            };
-            model.Axes.Add(xAxis);
-
-            var yAxis = new LinearAxis
-            {
-                Position = AxisPosition.Left,
-                Title = "Y",
-                TitleFontSize = 18,
-                FontSize = 16,
-                MajorGridlineStyle = LineStyle.Solid,
-                MinorGridlineStyle = LineStyle.Dot,
-                Minimum = yMin,
-                Maximum = yMax,
-                MajorStep = step,
-                MinorStep = minor
-            };
-            model.Axes.Add(yAxis);
-
-            var colorAxis = new LinearColorAxis
-            {
-                Position = AxisPosition.Right,
-                Key = "pointColors",
-                Palette = new OxyPalette(pcl.Colors),
-                Minimum = 0,
-                Maximum = pcl.Colors.Count - 1,
-                HighColor = OxyColors.Undefined,
-                LowColor = OxyColors.Undefined,
-                IsAxisVisible = false
-            };
-            model.Axes.Add(colorAxis);
-            var scatter = new ScatterSeries
-            {
-                MarkerType = MarkerType.Circle,
-                MarkerSize = 2,
-                ColorAxisKey = colorAxis.Key
-            };
-            for (int i = 0; i < pcl.PointCloud.Count; i++)
-                scatter.Points.Add(new ScatterPoint(pcl.PointCloud[i].X, pcl.PointCloud[i].Y, scatter.MarkerSize, value: i));
-            model.Series.Add(scatter);
-            var exporter = new OxyPlot.SkiaSharp.PngExporter() { Height = 600, Width = 900 };
             using var ms = new MemoryStream();
+            var model = Drawing.Make3dImg(user);
+            var exporter = new OxyPlot.SkiaSharp.PngExporter() { Height = 600, Width = 900 };
             exporter.Export(model, ms);
             ms.Seek(0, SeekOrigin.Begin);
             await botClient.SendPhoto(

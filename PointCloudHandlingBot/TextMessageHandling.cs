@@ -1,5 +1,7 @@
-﻿using PointCloudHandlingBot.PointCloudProcesses;
-using PointCloudHandlingBot.PointCloudProcesses.PipelineSteps;
+﻿using PointCloudHandlingBot.MsgPipeline;
+using PointCloudHandlingBot.PointCloudProcesses;
+using PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps;
+using SixLabors.Fonts.Unicode;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
@@ -18,7 +20,7 @@ namespace PointCloudHandlingBot
 
     class TextMessageHandling
     {
-        private IPipelineSteps step;
+        private IAnalyzePipelineSteps step;
         public delegate Task KeyboardDelegate(ITelegramBotClient bot, long chatId);
         public event KeyboardDelegate? OpenAnalizeKeyboardEvent;
         public event KeyboardDelegate? OpenColorKeyboardEvent;
@@ -36,66 +38,81 @@ namespace PointCloudHandlingBot
                             • Cool
                             Чтобы их применить, перед отображением напиши мне /colorMap<палитра>, например, /colorMapCool.
                             """;
+        public readonly Keyboards keyboards = new();
         private void GoPipe(User user)
         {
             FileHandling file = new();
-            user.Pipe.Condition = PipeLine.PipeCondition.None;
+            user.Pipe.Condition = AnalyzePipeLine.PipeCondition.None;
             user.CurrentPcl ??= new();
             user.CurrentPcl.PointCloud = new(user.OrigPcl.PointCloud);
             user.Pipe.Execute(user.CurrentPcl);
             user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
             user.Pipe = new();
-            user.Pipe.Condition = PipeLine.PipeCondition.None;
-            SendImageEvent?.Invoke(user);
-            
+            user.Pipe.Condition = AnalyzePipeLine.PipeCondition.None;
         }
 
-        public string WhatDoYouWant(ITelegramBotClient botClient, User user, string textMsg)
+        public void WhatDoYouWant(ITelegramBotClient botClient, User user, string textMsg)
         {
 
             string answer = string.Empty;
             FileHandling file = new();
             textMsg = textMsg.Trim();
-            if (user.Pipe.Condition == PipeLine.PipeCondition.SettingStageType)
+            switch (user.Pipe.Condition)
             {
-                switch (textMsg)
-                {
-                    case "gopipe": 
-                        GoPipe(user);
-                        OpenMainEvent?.Invoke(botClient,user.ChatId); 
-                        break;
-                    case "resetpipe":
+                case AnalyzePipeLine.PipeCondition.SettingStageType:
 
-                        user.Pipe = new();
-                        answer = """
+                    switch (textMsg)
+                    {
+                        case "gopipe":
+                            GoPipe(user);
+                            Task.Run(() =>
+                                MsgPipeLine.SendAll(botClient, user,
+                                    new ImageMsg(Drawing.Make3dImg),
+                                    new KeyboardMsg(keyboards.MainMenu)
+                                ));
+                            break;
+                        case "resetpipe":
+
+                            user.Pipe = new();
+                            answer = """
                         Составление порядка обработки отменено. 
                         Напоминаю, как выглядит твое сырое облако точек. 
                         Что теперь будем делать?
                         """;
-                        SendTextEvent?.Invoke(user, answer);
-                        SendImageEvent?.Invoke(user);                        
-                        OpenMainEvent?.Invoke(botClient, user.ChatId);
-                        break;
-                    default:
-                        user.Pipe.StageName = textMsg;
-                        answer = "Ок, теперь введи параметры";
-                        SendTextEvent?.Invoke(user, answer);
-                        user.Pipe.Condition = PipeLine.PipeCondition.SettingStageParams;
-                        break;
-                }
-            }
-            else
-            {
-                if (user.Pipe.Condition == PipeLine.PipeCondition.SettingStageParams)
-                {
-                    user.Pipe.Condition = PipeLine.PipeCondition.SettingStageType;
-                    user.Pipe.StageParams = textMsg.Replace('.', ',').Split(':')
-                           .Select(d => double.Parse(d))
-                           .ToList();
-                    user.Pipe.CreateStep();
-                    OpenAnalizeKeyboardEvent?.Invoke(botClient, user.ChatId);
-                }
-                else
+
+                            Task.Run(() =>
+                                MsgPipeLine.SendAll(botClient, user,
+                                    new TextMsg(answer),
+                                    new ImageMsg(Drawing.Make3dImg),
+                                    new KeyboardMsg(keyboards.MainMenu)
+                                ));
+                            break;
+                        default:
+                            user.Pipe.StageName = textMsg;
+                            answer = "Ок, теперь введи параметры";
+                            Task.Run(() =>
+                                MsgPipeLine.SendAll(botClient, user,
+                                    new TextMsg(answer)
+                                ));
+                            user.Pipe.Condition = AnalyzePipeLine.PipeCondition.SettingStageParams;
+                            break;
+                    }
+
+                    break;
+                case AnalyzePipeLine.PipeCondition.SettingStageParams:
+                    {
+                        user.Pipe.Condition = AnalyzePipeLine.PipeCondition.SettingStageType;
+                        user.Pipe.StageParams = textMsg.Replace('.', ',').Split(':')
+                               .Select(d => double.Parse(d))
+                               .ToList();
+                        user.Pipe.CreateStep();
+                        Task.Run(() =>
+                                MsgPipeLine.SendAll(botClient, user,
+                                    new KeyboardMsg(keyboards.Analyze)
+                                ));
+                    }
+                    break;
+                default:
                     switch (textMsg)
                     {
                         case "/start": answer = hello; break;
@@ -105,28 +122,41 @@ namespace PointCloudHandlingBot
                             if (user.OrigPcl.PointCloud is null) break;
                             var pcl = GetActualPcl(user);
                             pcl.Colors = Drawing.Coloring(pcl, user.ColorMap);
-
-                            SendImageEvent?.Invoke(user);
-                            OpenMainEvent?.Invoke(botClient, user.ChatId);
+                            Task.Run(() =>
+                            MsgPipeLine.SendAll(botClient, user,
+                                new ImageMsg(Drawing.Make3dImg),
+                                new KeyboardMsg(keyboards.MainMenu)
+                            ));
                             break;
                         case "/analyze":
                             user.Pipe = new();
-                            user.Pipe.Condition = PipeLine.PipeCondition.SettingStageType;
+                            user.Pipe.Condition = AnalyzePipeLine.PipeCondition.SettingStageType;
                             OpenAnalizeKeyboardEvent?.Invoke(botClient, user.ChatId);
                             answer = "Пошли в анализ";
+                            Task.Run(() =>
+                            MsgPipeLine.SendAll(botClient, user,
+                                new KeyboardMsg(keyboards.Analyze)
+                            ));
                             break;
                         case "/setColor":
-                            OpenColorKeyboardEvent?.Invoke(botClient, user.ChatId);
                             answer = "Пошли в покрас";
+                            Task.Run(() =>
+                            MsgPipeLine.SendAll(botClient, user,
+                                new KeyboardMsg(keyboards.ColorMap)
+                            ));
                             break;
                         default:
 
                             answer = "че :/";
-                            SendTextEvent?.Invoke(user, answer);
+                            Task.Run(() =>
+                            MsgPipeLine.SendAll(botClient, user,
+                                new TextMsg(answer)
+                            ));
                             break;
                     }
+                    break;
             }
-            return answer;
+
         }
 
         private static UserPclFeatures GetActualPcl(User user)
@@ -138,18 +168,15 @@ namespace PointCloudHandlingBot
         }
         private string SetColorMap(User user, string colormap)
         {
-            string mapInfo = $"Ок, теперь буду рисовать палитрой {colormap}";
-            switch (colormap)
+            string mapInfo = $"Теперь буду рисовать так";
+            user.ColorMap = colormap switch
             {
-                case "Jet": user.ColorMap = Drawing.MapJet; break;
-                case "Cool": user.ColorMap = Drawing.MapCool; break;
-                case "Plasma": user.ColorMap = Drawing.MapPlasma; break;
-                case "Spring": user.ColorMap = Drawing.MapSpring; break;
-                default:
-                    user.ColorMap = Drawing.MapSpring;
-                    mapInfo = $"Не знаю, что за {colormap}, будет Spring";
-                    break;
-            }
+                "Jet" => Drawing.MapJet,
+                "Cool" => Drawing.MapCool,
+                "Plasma" => Drawing.MapPlasma,
+                "Spring" => Drawing.MapSpring,
+                _ => Drawing.MapSpring,
+            };
             SendTextEvent?.Invoke(user, mapInfo);
             return mapInfo;
         }

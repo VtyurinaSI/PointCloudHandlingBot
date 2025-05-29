@@ -1,4 +1,5 @@
-﻿using PointCloudHandlingBot.PointCloudProcesses.PipelineSteps;
+﻿
+using PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace PointCloudHandlingBot.PointCloudProcesses
 {
-    public class PipeLine
+    public class AnalyzePipeLine
     {
         public enum PipeCondition
         {
@@ -16,13 +17,13 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             SettingStageType,
             SettingStageParams,            
         }
-        private readonly IList<IPipelineSteps> _steps = [];
+        private readonly IList<IAnalyzePipelineSteps> _steps = [];
         public string StageName { get; set; } = string.Empty;
         public List<double> StageParams { get; set; } = [];
         public PipeCondition Condition { get; set; } = PipeCondition.None;
         public  void CreateStep()
         {
-            IPipelineSteps step = StageName switch
+            IAnalyzePipelineSteps step = StageName switch
             {
                 "transform" => new Translate(
                     new System.Numerics.Vector3((float)StageParams[0], (float)StageParams[1], (float)StageParams[2]),

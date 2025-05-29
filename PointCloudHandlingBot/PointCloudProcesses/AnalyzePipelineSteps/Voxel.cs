@@ -5,18 +5,18 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PointCloudHandlingBot.PointCloudProcesses.PipelineSteps
+namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
 {
-    class Voxel : IPipelineSteps
+    class Voxel : IAnalyzePipelineSteps
     {
         private double voxelSize;
         internal Voxel(double _voxelSize)
         {
-            voxelSize=_voxelSize;
+            voxelSize = _voxelSize;
         }
         public UserPclFeatures Process(UserPclFeatures pcl)
         {
-            
+
             int numPoints = pcl.PointCloud.Count;
 
             var voxelMap = new Dictionary<(int, int, int), List<int>>();

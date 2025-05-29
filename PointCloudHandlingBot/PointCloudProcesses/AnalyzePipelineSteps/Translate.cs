@@ -7,9 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Transactions;
 
-namespace PointCloudHandlingBot.PointCloudProcesses.PipelineSteps
+namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
 {
-    internal class Translate : IPipelineSteps
+    internal class Translate : IAnalyzePipelineSteps
     {
         private Vector3 trans;
         private Vector3 rot;

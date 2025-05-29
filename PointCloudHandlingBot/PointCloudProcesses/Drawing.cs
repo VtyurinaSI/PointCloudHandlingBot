@@ -1,6 +1,11 @@
-﻿using SixLabors.ImageSharp;
+﻿using OxyPlot;
+using OxyPlot.Axes;
+using OxyPlot.Series;
+using OxyPlot.SkiaSharp;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.ColorSpaces;
 using SixLabors.ImageSharp.ColorSpaces.Conversion;
+using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System;
@@ -10,89 +15,90 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using SixLabors.ImageSharp.Drawing.Processing;
-
+using Telegram.Bot.Types;
 using static System.Formats.Asn1.AsnWriter;
-using OxyPlot;
 
 namespace PointCloudHandlingBot.PointCloudProcesses
 {
     public static class Drawing
     {
 
-        ///// <summary>
-        ///// Нарисовать изображение с использованием цветов из файла
-        ///// </summary>
-        ///// <param name="width">Ширина изображения</param>
-        ///// <param name="height">Высота изображение</param>
-        ///// <param name="padding">Отступы</param>
-        ///// <returns>Изображение</returns>
-        //public static Image<OxyColor> DrawProjection(
-        // UserPclFeatures pcl,
-        //  int width = 1920,
-        // int height = 1080,
-        // int padding = 20)
-        //{
-        //    if (pcl.PointCloud == null || pcl.PointCloud.Count == 0)
-        //        throw new ArgumentException("Нет точек для проекции", nameof(pcl.PointCloud));
+        public static PlotModel Make3dImg(User user)
+        {
+            //Task.Run(() => SendLogToBot(user, "Секунду, отрисовываю..."));
+            var pcl = user.CurrentPcl is null ? user.OrigPcl : user.CurrentPcl;
 
-        //    float scale = GetScale(pcl.PclLims);
-        //    var image = SetEmptyImage(pcl.PclLims, ref scale);
+            var lims = pcl.PclLims;
+            double xMin = lims.xMin, xMax = lims.xMax;
+            double yMin = lims.yMin, yMax = lims.yMax;
 
-        //    float minx = pcl.PclLims.xMin, miny = pcl.PclLims.yMin;
+            double xRange = xMax - xMin;
+            double yRange = yMax - yMin;
 
-        //    int radius = 1;
-        //    OxyColor col = OxyColor.FromRgb(0, 0, 255);
-        //    int count = pcl.PointCloud.Count;
-        //    for (int i = 0; i < count; i++)
-        //    {
-        //        var p = pcl.PointCloud[i];
-        //        var c = pcl.Colors[i];
-        //        int px = (int)((p.X - minx) * scale + padding);
-        //        int py = height - 1 - (int)((p.Y - miny) * scale + padding);
-        //        if (px >= 0 && px < width && py >= 0 && py < height)
-        //        {
-        //            for (int dy = -radius; dy <= radius; dy++)
-        //                for (int dx = -radius; dx <= radius; dx++)
-        //                {
-        //                    int nx = px + dx;
-        //                    int ny = py + dy;
-        //                    if (nx >= 0 && nx < width && ny >= 0 && ny < height)
-        //                        image[nx, ny] = c;
-        //                }
-        //        }
-        //    }
-        //    return image;
-        //}
+            int N = 10;
+            double step = Math.Max(xRange, yRange) / N;
+            double minor = step / 5;
+            var model = new PlotModel
+            {
+                Title = "Проекция облака точек",
+                TitleFontSize = 24,
+                SubtitleFontSize = 0,
+                TextColor = OxyColors.Black
+            };
+            var xAxis = new LinearAxis
+            {
+                Position = AxisPosition.Bottom,
+                Title = "X",
+                TitleFontSize = 18,
+                FontSize = 16,
+                MajorGridlineStyle = LineStyle.Solid,
+                MinorGridlineStyle = LineStyle.Dot,
+                Minimum = xMin,
+                Maximum = xMax,
+                MajorStep = step,
+                MinorStep = minor
+            };
+            model.Axes.Add(xAxis);
 
-        //private static Image<Rgba32> SetEmptyImage(PclLims lims, ref float scale, int maxWidth = 1920, int maxHeight = 1080, int padding = 20)
-        //{
-        //    float widthF = (lims.xMax - lims.xMin) * scale + 2 * padding;
-        //    float heightF = (lims.yMax - lims.yMin) * scale + 2 * padding;
+            var yAxis = new LinearAxis
+            {
+                Position = AxisPosition.Left,
+                Title = "Y",
+                TitleFontSize = 18,
+                FontSize = 16,
+                MajorGridlineStyle = LineStyle.Solid,
+                MinorGridlineStyle = LineStyle.Dot,
+                Minimum = yMin,
+                Maximum = yMax,
+                MajorStep = step,
+                MinorStep = minor
+            };
+            model.Axes.Add(yAxis);
 
-        //    int width = (int)Math.Ceiling(widthF);
-        //    int height = (int)Math.Ceiling(heightF);
-
-        //    if (width > maxWidth || height > maxHeight)
-        //    {
-        //        float widthRatio = (float)maxWidth / width;
-        //        float heightRatio = (float)maxHeight / height;
-        //        float k = Math.Min(widthRatio, heightRatio);
-
-        //        width = (int)(width * k);
-        //        height = (int)(height * k);
-        //        scale *= k;
-        //    }
-
-        //    Image<Rgba32> image = new(width, height);
-        //    var white = new Rgba32(255, 255, 255, 255);
-
-        //    for (int y = 0; y < height; y++)
-        //        for (int x = 0; x < width; x++)
-        //            image[x, y] = white;
-
-        //    return image;
-        //}
+            var colorAxis = new LinearColorAxis
+            {
+                Position = AxisPosition.Right,
+                Key = "pointColors",
+                Palette = new OxyPalette(pcl.Colors),
+                Minimum = 0,
+                Maximum = pcl.Colors.Count - 1,
+                HighColor = OxyColors.Undefined,
+                LowColor = OxyColors.Undefined,
+                IsAxisVisible = false
+            };
+            model.Axes.Add(colorAxis);
+            var scatter = new ScatterSeries
+            {
+                MarkerType = MarkerType.Circle,
+                MarkerSize = 2,
+                ColorAxisKey = colorAxis.Key
+            };
+            for (int i = 0; i < pcl.PointCloud.Count; i++)
+                scatter.Points.Add(new ScatterPoint(pcl.PointCloud[i].X, pcl.PointCloud[i].Y, scatter.MarkerSize, value: i));
+            
+            model.Series.Add(scatter);
+            return model;
+        }
         internal static List<OxyColor> Coloring(UserPclFeatures pcl, Func<float, float, float, OxyColor> ColorMap)
         {
             int count = pcl.PointCloud.Count;

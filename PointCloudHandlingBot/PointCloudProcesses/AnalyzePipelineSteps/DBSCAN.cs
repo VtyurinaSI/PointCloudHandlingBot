@@ -5,9 +5,9 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PointCloudHandlingBot.PointCloudProcesses.PipelineSteps
+namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
 {
-    internal class DBSCAN: IPipelineSteps
+    internal class DBSCAN: IAnalyzePipelineSteps
     {
         private readonly double eps;
         private readonly int minPts;

@@ -5,9 +5,9 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PointCloudHandlingBot.PointCloudProcesses.PipelineSteps
+namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
 {
-    internal class Gaussian : IPipelineSteps
+    internal class Gaussian : IAnalyzePipelineSteps
     {
         private float radius = 0.05f;
         private float sigma = 0.02f;
