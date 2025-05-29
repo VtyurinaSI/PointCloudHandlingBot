@@ -30,10 +30,7 @@ namespace PointCloudHandlingBot
                             Чтобы их применить, перед отображением напиши мне /colorMap<палитра>, например, /colorMapCool.
                             """;
         public readonly Keyboards keyboards = new();
-        private void GoPipe(User user)
-        {
-        }
-
+        
         public List<IMsgPipelineSteps> WhatDoYouWant(User user, string textMsg)
         {
             textMsg = textMsg.Trim();
@@ -121,14 +118,14 @@ namespace PointCloudHandlingBot
                     return [new KeyboardMsg(keyboards.ColorMap)];
 
                 case string c when c.StartsWith("/cluster"):
-                    var parm = textMsg.Replace('.', ',').Split(':')
+                    var parm = textMsg.Substring(8).Replace('.', ',').Split(':')
                 .Select(d => double.Parse(d))
                 .ToList();
                     ObjectsClustering(user, parm[0], (int)parm[1], (int)parm[2]);
                     return [new ImageMsg(Drawing.Make3dImg),
                         new KeyboardMsg(keyboards.MainMenu)];
 
-                case string s when s.StartsWith("/setColor"):
+                case string s when s.StartsWith("/colorMap"):
                     return ApplyColorMap(user, textMsg);
 
                 default:
@@ -139,7 +136,7 @@ namespace PointCloudHandlingBot
         private void ObjectsClustering(User user, double eps, int minPts, int minClustVol)
         {
             Clustering clustering = new();
-            clustering.ClusteObjects(user, eps, minPts, minClustVol);
+            user.CurrentPcl.Clusters=clustering.ClusteObjects(user, eps, minPts, minClustVol);
         }
 
         private List<IMsgPipelineSteps> ApplyColorMap(User user, string textMsg)

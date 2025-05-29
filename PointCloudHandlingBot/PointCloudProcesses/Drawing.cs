@@ -1,4 +1,5 @@
 ﻿using OxyPlot;
+using OxyPlot.Annotations;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using OxyPlot.SkiaSharp;
@@ -95,8 +96,51 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             };
             for (int i = 0; i < pcl.PointCloud.Count; i++)
                 scatter.Points.Add(new ScatterPoint(pcl.PointCloud[i].X, pcl.PointCloud[i].Y, scatter.MarkerSize, value: i));
-            
+
             model.Series.Add(scatter);
+            if (user.CurrentPcl is not null && user.CurrentPcl.Clusters is not null)
+            {
+                foreach (var cl in user.CurrentPcl.Clusters)
+                {
+                    // а) прямоугольник
+                    var rect = new RectangleAnnotation
+                    {
+                        MinimumX = cl.Lims.xMin,
+                        MaximumX = cl.Lims.xMax,
+                        MinimumY = cl.Lims.yMin,
+                        MaximumY = cl.Lims.yMax,
+                        Stroke = OxyColors.Black,
+                        StrokeThickness = 1,
+                        Fill = OxyColors.Undefined    // прозрачный фон
+                    };
+                    model.Annotations.Add(rect);
+
+                    // б) центроид
+                    var pt = new PointAnnotation
+                    {
+                        X = cl.Centroid.X,
+                        Y = cl.Centroid.Y,
+                        Shape = MarkerType.Circle,
+                        Size = 6,
+                        Fill = OxyColors.Red,
+                        Stroke = OxyColors.Black,
+                        StrokeThickness = 1
+                    };
+                    model.Annotations.Add(pt);
+
+                    // в) подпись под левым нижним углом
+                    var label = new TextAnnotation
+                    {
+                        Text = $"Size: {cl.Size.X:0.00}x{cl.Size.Y:0.00}x{cl.Size.Z:0.00}",
+                        TextPosition = new DataPoint(cl.Lims.xMin, cl.Lims.yMin),
+                        FontSize = 14,
+                        TextVerticalAlignment = VerticalAlignment.Top,    // текст «над» этой точкой
+                        TextHorizontalAlignment = HorizontalAlignment.Left,
+                        Stroke = OxyColors.Undefined  // без рамки вокруг текста
+                    };
+                    model.Annotations.Add(label);
+                }
+            }
             return model;
         }
         internal static List<OxyColor> Coloring(PclFeatures pcl, Func<float, float, float, OxyColor> ColorMap)
@@ -125,7 +169,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             float g = 1f - t;
             float b = 1f;
 
-            return  OxyColor.FromRgb(
+            return OxyColor.FromRgb(
                 (byte)(r * 255),
                 (byte)(g * 255),
                 (byte)(b * 255));
@@ -140,7 +184,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             float g = Math.Clamp(1.5f - MathF.Abs(4f * t - 2f), 0, 1);
             float b = Math.Clamp(1.5f - MathF.Abs(4f * t - 1f), 0, 1);
 
-            return  OxyColor.FromRgb(
+            return OxyColor.FromRgb(
                 (byte)(r * 255),
                 (byte)(g * 255),
                 (byte)(b * 255));
@@ -151,11 +195,11 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             float t = (z - minZ) / (maxZ - minZ);
             t = Math.Clamp(t, 0f, 1f);
 
-            var c0 =  OxyColor.FromRgb(117, 11, 189);
-            var c1 =  OxyColor.FromRgb(184, 24, 188);
-            var c2 =  OxyColor.FromRgb(236, 28, 122);
-            var c3 =  OxyColor.FromRgb(251, 115, 105);
-            var c4 =  OxyColor.FromRgb(255, 235, 0);
+            var c0 = OxyColor.FromRgb(117, 11, 189);
+            var c1 = OxyColor.FromRgb(184, 24, 188);
+            var c2 = OxyColor.FromRgb(236, 28, 122);
+            var c3 = OxyColor.FromRgb(251, 115, 105);
+            var c4 = OxyColor.FromRgb(255, 235, 0);
 
             static OxyColor Lerp(OxyColor a, OxyColor b, float f)
             {
@@ -212,6 +256,6 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             float scaleY = (height - 2 * padding) / spanY;
             return MathF.Min(scaleX, scaleY);
         }
-       
+
     }
 }

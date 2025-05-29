@@ -29,7 +29,7 @@ namespace PointCloudHandlingBot
         public InlineKeyboardMarkup MainMenu { get; set; } = new(new[] {
                     new[] {InlineKeyboardButton.WithCallbackData("Выбрать цветовую карту", "/setColor") },
                     new[] {InlineKeyboardButton.WithCallbackData("Обработать изображение", "/analyze")},
-                    new[] {InlineKeyboardButton.WithCallbackData("Кластеризировать объекты", "/cluster")},
+                    new[] {InlineKeyboardButton.WithCallbackData("Кластеризировать объекты", "/cluster0.02:10:150")},
         });
     }
 }

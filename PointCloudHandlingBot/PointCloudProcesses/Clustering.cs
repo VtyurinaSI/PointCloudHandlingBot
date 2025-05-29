@@ -11,20 +11,24 @@ namespace PointCloudHandlingBot.PointCloudProcesses
 {
     internal class Clustering
     {
-        public List<Cluster> ClusteObjects(User user, double eps, int minPts, int minClustVol)
+        public List<Cluster>? ClusteObjects(User user, double eps, int minPts, int minClustVol)
         {
             List<Cluster> clustersList = new();
             List<OxyColor> colors = [];
             List<Vector3> points = [];
             var clusters = DBSCAN.ComputeClusters(user.CurrentPcl.PointCloud, eps, minPts, minClustVol);
-            foreach (var key in clusters.Keys.ToList())
+            foreach (var cloud in clusters.Values.ToList())
             {
-                var (curCluster, curPclFeatures) = GetClusterFeatures(clusters[key]);
+                var (curCluster, curPclFeatures) = GetClusterFeatures(cloud);
+                curCluster.Lims = curPclFeatures.PclLims;
+
                 clustersList.Add(curCluster);
                 colors.AddRange(curPclFeatures.Colors);
                 points.AddRange(curPclFeatures.PointCloud);
             }
-            return clustersList;
+            user.CurrentPcl.PointCloud = points;
+            user.CurrentPcl.Colors = colors;
+            return clustersList.Count > 0 ? clustersList : null;
 
         }
 
@@ -38,9 +42,9 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             feature.Colors = Enumerable.Repeat(color, count).ToList();
             Cluster clust = new();
             clust.Centroid = new(
-                (feature.PclLims.xMin + feature.PclLims.xMin) / 2,
-                (feature.PclLims.yMin + feature.PclLims.yMin) / 2,
-                (feature.PclLims.zMin + feature.PclLims.zMin) / 2);
+                (feature.PclLims.xMin + feature.PclLims.xMax) / 2,
+                (feature.PclLims.yMin + feature.PclLims.yMax) / 2,
+                (feature.PclLims.zMin + feature.PclLims.zMax) / 2);
 
             clust.Size = new(
                 feature.PclLims.xMax - feature.PclLims.xMin,

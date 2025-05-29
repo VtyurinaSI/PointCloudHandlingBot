@@ -27,7 +27,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
         public List<OxyColor>? Colors { get; set; }
         public PclLims PclLims { get; set; } = new();
 
-        public List<Cluster> Clusters { get; set; } = new();
+        public List<Cluster>? Clusters { get; set; } 
         private void UpdLims(List<Vector3> pointCloud)
         {
             foreach (var point in pointCloud)

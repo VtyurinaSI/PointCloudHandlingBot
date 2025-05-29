@@ -11,6 +11,8 @@ namespace PointCloudHandlingBot.PointCloudProcesses
     {
         public Vector3 Centroid { get; set; }
         public Vector3 Size { get; set; }
+
+        public PclLims Lims { get; set; } = new();
         public string? Name { get; set; }
     }
 }
