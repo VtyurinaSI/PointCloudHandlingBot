@@ -22,8 +22,11 @@ namespace PointCloudHandlingBot
         public delegate Task KeyboardDelegate(ITelegramBotClient bot, long chatId);
         public event KeyboardDelegate? OpenAnalizeKeyboardEvent;
         public event KeyboardDelegate? OpenColorKeyboardEvent;
+        public event KeyboardDelegate? OpenMainEvent;
         public delegate Task SendImageDelegate(User user);
-        public event SendImageDelegate? SendImageDelegateEvent;
+        public event SendImageDelegate? SendImageEvent;
+        public delegate Task SendTextDelegate(User user, string msg);
+        public event SendTextDelegate? SendTextEvent;
         private const string hello = """
                             Привет! Я умею обрабатывать объемные облака точек!
                             Рисую в палитрах:
@@ -43,7 +46,8 @@ namespace PointCloudHandlingBot
             user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
             user.Pipe = new();
             user.Pipe.Condition = PipeLine.PipeCondition.None;
-            SendImageDelegateEvent?.Invoke(user);
+            SendImageEvent?.Invoke(user);
+            
         }
 
         public string WhatDoYouWant(ITelegramBotClient botClient, User user, string textMsg)
@@ -56,7 +60,10 @@ namespace PointCloudHandlingBot
             {
                 switch (textMsg)
                 {
-                    case "gopipe": GoPipe(user); break;
+                    case "gopipe": 
+                        GoPipe(user);
+                        OpenMainEvent?.Invoke(botClient,user.ChatId); 
+                        break;
                     case "resetpipe":
 
                         user.Pipe = new();
@@ -65,10 +72,14 @@ namespace PointCloudHandlingBot
                         Напоминаю, как выглядит твое сырое облако точек. 
                         Что теперь будем делать?
                         """;
+                        SendTextEvent?.Invoke(user, answer);
+                        SendImageEvent?.Invoke(user);                        
+                        OpenMainEvent?.Invoke(botClient, user.ChatId);
                         break;
                     default:
                         user.Pipe.StageName = textMsg;
                         answer = "Ок, теперь введи параметры";
+                        SendTextEvent?.Invoke(user, answer);
                         user.Pipe.Condition = PipeLine.PipeCondition.SettingStageParams;
                         break;
                 }
@@ -95,7 +106,8 @@ namespace PointCloudHandlingBot
                             var pcl = GetActualPcl(user);
                             pcl.Colors = Drawing.Coloring(pcl, user.ColorMap);
 
-                            SendImageDelegateEvent?.Invoke(user);
+                            SendImageEvent?.Invoke(user);
+                            OpenMainEvent?.Invoke(botClient, user.ChatId);
                             break;
                         case "/analyze":
                             user.Pipe = new();
@@ -110,7 +122,7 @@ namespace PointCloudHandlingBot
                         default:
 
                             answer = "че :/";
-
+                            SendTextEvent?.Invoke(user, answer);
                             break;
                     }
             }
@@ -124,7 +136,7 @@ namespace PointCloudHandlingBot
                 pcl = user.CurrentPcl;
             return pcl;
         }
-        private static string SetColorMap(User user, string colormap)
+        private string SetColorMap(User user, string colormap)
         {
             string mapInfo = $"Ок, теперь буду рисовать палитрой {colormap}";
             switch (colormap)
@@ -138,6 +150,7 @@ namespace PointCloudHandlingBot
                     mapInfo = $"Не знаю, что за {colormap}, будет Spring";
                     break;
             }
+            SendTextEvent?.Invoke(user, mapInfo);
             return mapInfo;
         }
     }

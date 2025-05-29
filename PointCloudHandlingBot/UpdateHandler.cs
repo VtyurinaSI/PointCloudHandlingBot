@@ -6,6 +6,8 @@ using OxyPlot.ImageSharp;
 using OxyPlot.Series;
 using OxyPlot.Series;
 using OxyPlot.SkiaSharp;
+using SixLabors.ImageSharp.ColorSpaces;
+
 //using SixLabors.ImageSharp;
 //using SixLabors.ImageSharp.PixelFormats;
 using Telegram.Bot;
@@ -25,15 +27,16 @@ namespace PointCloudHandlingBot
             text = new();
             text.OpenAnalizeKeyboardEvent += OpenPipelineKeyboard;
             text.OpenColorKeyboardEvent += OpenColorKeyboard;
-            text.SendImageDelegateEvent += SendPlot;
+            text.SendImageEvent += SendPlot;
+            text.OpenMainEvent += OpenBaseKeyboard;
+            text.SendTextEvent += SendLogToBot;
             file = new();
         }
+        ITelegramBotClient bot;
         private readonly FileHandling file;
-        private async Task SendLogToBot(ITelegramBotClient bot, CancellationToken token, long id, string msg)
+        private async Task SendLogToBot(User user, string msg)
         {
-            await bot.SendMessage(id,
-                                msg,
-                                cancellationToken: token);
+            await bot.SendMessage(user.ChatId, msg);
         }
 
         public delegate Task MessageHandler(User user, string msg);
@@ -47,6 +50,7 @@ namespace PointCloudHandlingBot
         private TextMessageHandling text;
         public async Task HandleUpdateAsync(ITelegramBotClient bot, Update update, CancellationToken token)
         {
+            this.bot = bot;
             string reply = string.Empty;
 
 
@@ -78,9 +82,10 @@ namespace PointCloudHandlingBot
                     OnHandleUpdateStarted?.Invoke(user, $"Received file \"{doc.FileName}\"");
                     reply = await file.ReadFile(bot, user, doc);
                     await SendPlot(user);
+                    await OpenBaseKeyboard(bot, user.ChatId);
                 }
             }
-            if (reply != string.Empty) await SendLogToBot(bot, token, user.ChatId, reply);
+            //if (reply != string.Empty) await SendLogToBot(bot, token, user.ChatId, reply);
         }
 
         private async Task OpenColorKeyboard(ITelegramBotClient bot, long chatId)
@@ -101,12 +106,55 @@ namespace PointCloudHandlingBot
 
         public async Task SendPlot(User user)
         {
-            using var ms = new MemoryStream();
+            Task.Run(() => SendLogToBot(user, "Секунду, отрисовываю..."));
+            var pcl = user.CurrentPcl is null ? user.OrigPcl : user.CurrentPcl;
 
-            var pcl = user.CurrentPcl is null ? user.OrigPcl : user.CurrentPcl; ;
-            var model = new PlotModel();
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, MajorGridlineStyle = LineStyle.Solid });
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, MajorGridlineStyle = LineStyle.Solid });
+            var lims = pcl.PclLims;
+            double xMin = lims.xMin, xMax = lims.xMax;
+            double yMin = lims.yMin, yMax = lims.yMax;
+
+            double xRange = xMax - xMin;
+            double yRange = yMax - yMin;
+
+            int N = 10;
+            double step = Math.Max(xRange, yRange) / N;
+            double minor = step / 5;
+            var model = new PlotModel
+            {
+                Title = "Проекция облака точек",
+                TitleFontSize = 24,
+                SubtitleFontSize = 0,
+                TextColor = OxyColors.Black
+            };
+            var xAxis = new LinearAxis
+            {
+                Position = AxisPosition.Bottom,
+                Title = "X",
+                TitleFontSize = 18,
+                FontSize = 16,
+                MajorGridlineStyle = LineStyle.Solid,
+                MinorGridlineStyle = LineStyle.Dot,
+                Minimum = xMin,
+                Maximum = xMax,
+                MajorStep = step,
+                MinorStep = minor
+            };
+            model.Axes.Add(xAxis);
+
+            var yAxis = new LinearAxis
+            {
+                Position = AxisPosition.Left,
+                Title = "Y",
+                TitleFontSize = 18,
+                FontSize = 16,
+                MajorGridlineStyle = LineStyle.Solid,
+                MinorGridlineStyle = LineStyle.Dot,
+                Minimum = yMin,
+                Maximum = yMax,
+                MajorStep = step,
+                MinorStep = minor
+            };
+            model.Axes.Add(yAxis);
 
             var colorAxis = new LinearColorAxis
             {
@@ -129,7 +177,8 @@ namespace PointCloudHandlingBot
             for (int i = 0; i < pcl.PointCloud.Count; i++)
                 scatter.Points.Add(new ScatterPoint(pcl.PointCloud[i].X, pcl.PointCloud[i].Y, scatter.MarkerSize, value: i));
             model.Series.Add(scatter);
-            var exporter = new OxyPlot.SkiaSharp.PngExporter() { Height = 600, Width = 800 };
+            var exporter = new OxyPlot.SkiaSharp.PngExporter() { Height = 600, Width = 900 };
+            using var ms = new MemoryStream();
             exporter.Export(model, ms);
             ms.Seek(0, SeekOrigin.Begin);
             await botClient.SendPhoto(
@@ -138,10 +187,21 @@ namespace PointCloudHandlingBot
                 caption: "Вот ваш график"
             );
         }
+        private async Task OpenBaseKeyboard(ITelegramBotClient bot, long chatId)
+        {
+            InlineKeyboardMarkup inlineKeyboard = new(new[] {
+                    new[] {InlineKeyboardButton.WithCallbackData("Выбрать цветовую карту", "/setColor") },
+                    new[] {InlineKeyboardButton.WithCallbackData("Обработать изображение", "/analyze")}}
+                    );
+
+            await bot.SendMessage(
+                    chatId: chatId,
+                    text: "Выберите вариант:",
+                    replyMarkup: inlineKeyboard);
+        }
 
         private async Task OpenPipelineKeyboard(ITelegramBotClient bot, long chatId)
         {
-            OnHandleUpdateCompleted?.Invoke(null, "Открываю клавиатуру для выбора этапов обработки облака точек");
             InlineKeyboardMarkup inlineKeyboard = new(new[] {
                     new[] {InlineKeyboardButton.WithCallbackData("Воксельный фильтр", "voxel") },
                     new[] {InlineKeyboardButton.WithCallbackData("DBSCAN", "dbscan")},
