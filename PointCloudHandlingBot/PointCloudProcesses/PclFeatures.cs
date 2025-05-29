@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace PointCloudHandlingBot.PointCloudProcesses
 {
-    public class UserPclFeatures
+    public class PclFeatures
     {
         private List<Vector3>? _pointCloud;
         public List<Vector3>? PointCloud
@@ -27,7 +27,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
         public List<OxyColor>? Colors { get; set; }
         public PclLims PclLims { get; set; } = new();
 
-
+        public List<Cluster> Clusters { get; set; } = new();
         private void UpdLims(List<Vector3> pointCloud)
         {
             foreach (var point in pointCloud)

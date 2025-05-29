@@ -32,14 +32,6 @@ namespace PointCloudHandlingBot
         public readonly Keyboards keyboards = new();
         private void GoPipe(User user)
         {
-            FileHandling file = new();
-            user.Pipe.Condition = AnalyzePipeLine.PipeCondition.None;
-            user.CurrentPcl ??= new();
-            user.CurrentPcl.PointCloud = new(user.OrigPcl.PointCloud);
-            user.Pipe.Execute(user.CurrentPcl);
-            user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
-            user.Pipe = new();
-            user.Pipe.Condition = AnalyzePipeLine.PipeCondition.None;
         }
 
         public List<IMsgPipelineSteps> WhatDoYouWant(User user, string textMsg)
@@ -65,7 +57,14 @@ namespace PointCloudHandlingBot
 
         private List<IMsgPipelineSteps> HandleGoPipe(User user)
         {
-            GoPipe(user);
+            FileHandling file = new();
+
+            user.CurrentPcl ??= new();
+            user.CurrentPcl.PointCloud = new(user.OrigPcl.PointCloud);
+            user.Pipe.Execute(user.CurrentPcl);
+            user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
+            user.Pipe = new();
+            user.Pipe.Condition = AnalyzePipeLine.PipeCondition.None;
             return
             [
                 new ImageMsg(Drawing.Make3dImg),
@@ -121,6 +120,14 @@ namespace PointCloudHandlingBot
                 case "/setColor":
                     return [new KeyboardMsg(keyboards.ColorMap)];
 
+                case string c when c.StartsWith("/cluster"):
+                    var parm = textMsg.Replace('.', ',').Split(':')
+                .Select(d => double.Parse(d))
+                .ToList();
+                    ObjectsClustering(user, parm[0], (int)parm[1], (int)parm[2]);
+                    return [new ImageMsg(Drawing.Make3dImg),
+                        new KeyboardMsg(keyboards.MainMenu)];
+
                 case string s when s.StartsWith("/setColor"):
                     return ApplyColorMap(user, textMsg);
 
@@ -128,6 +135,13 @@ namespace PointCloudHandlingBot
                     return [new TextMsg("че :/")];
             }
         }
+
+        private void ObjectsClustering(User user, double eps, int minPts, int minClustVol)
+        {
+            Clustering clustering = new();
+            clustering.ClusteObjects(user, eps, minPts, minClustVol);
+        }
+
         private List<IMsgPipelineSteps> ApplyColorMap(User user, string textMsg)
         {
             string colormap = textMsg.Substring(9);
@@ -146,9 +160,9 @@ namespace PointCloudHandlingBot
                 return [new TextMsg($"Теперь буду рисовать в {colormap}")];
 
         }
-        private static UserPclFeatures GetActualPcl(User user)
+        private static PclFeatures GetActualPcl(User user)
         {
-            UserPclFeatures pcl = user.OrigPcl;
+            PclFeatures pcl = user.OrigPcl;
             if (user.CurrentPcl is not null)
                 pcl = user.CurrentPcl;
             return pcl;

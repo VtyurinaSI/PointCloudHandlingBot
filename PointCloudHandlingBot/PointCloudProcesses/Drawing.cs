@@ -99,7 +99,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             model.Series.Add(scatter);
             return model;
         }
-        internal static List<OxyColor> Coloring(UserPclFeatures pcl, Func<float, float, float, OxyColor> ColorMap)
+        internal static List<OxyColor> Coloring(PclFeatures pcl, Func<float, float, float, OxyColor> ColorMap)
         {
             int count = pcl.PointCloud.Count;
             OxyColor[] colors = new OxyColor[count];

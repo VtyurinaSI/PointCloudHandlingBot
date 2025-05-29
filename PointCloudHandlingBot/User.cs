@@ -22,9 +22,9 @@ namespace PointCloudHandlingBot
 
         public Func<float, float, float, OxyColor> ColorMap = Drawing.MapSpring;
 
-        public UserPclFeatures OrigPcl { get; set; } = new();
+        public PclFeatures OrigPcl { get; set; } = new();
 
-        public UserPclFeatures? CurrentPcl { get;  set; }
+        public PclFeatures? CurrentPcl { get;  set; }
 
         public AnalyzePipeLine Pipe { get; set; } = new();
 

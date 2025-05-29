@@ -7,9 +7,10 @@ using System.Threading.Tasks;
 
 namespace PointCloudHandlingBot.PointCloudProcesses
 {
-    public interface IAnalyzePipelineSteps
+    public class Cluster
     {
-        public PclFeatures Process(PclFeatures pcl);
-
+        public Vector3 Centroid { get; set; }
+        public Vector3 Size { get; set; }
+        public string? Name { get; set; }
     }
 }

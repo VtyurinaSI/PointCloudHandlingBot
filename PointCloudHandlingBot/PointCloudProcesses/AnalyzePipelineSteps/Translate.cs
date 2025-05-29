@@ -19,7 +19,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
             trans = _trans;
             rot = _rot;
         }
-        public UserPclFeatures Process(UserPclFeatures pcl)
+        public PclFeatures Process(PclFeatures pcl)
         {
             int vol = pcl.PointCloud.Count;
             List<Vector3> rotated = new(new Vector3[vol]);

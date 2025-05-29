@@ -18,7 +18,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
             sigma = _sigma;
         }
 
-        public UserPclFeatures Process(UserPclFeatures pcl)
+        public PclFeatures Process(PclFeatures pcl)
         {
             int vol = pcl.PointCloud.Count; 
             var result = new List<Vector3>(vol);

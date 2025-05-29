@@ -1,27 +1,17 @@
-﻿using System;
+﻿using PointCloudHandlingBot.PointCloudProcesses;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
+namespace PointCloudHandlingBot
 {
-    internal class DBSCAN: IAnalyzePipelineSteps
+    static internal class DBSCAN
     {
-        private readonly double eps;
-        private readonly int minPts;
-        private readonly int minClustVol;
-        internal DBSCAN(double _eps, int _minPts, int _minClustVol)
-        {
-            eps = _eps;
-            minPts = _minPts;
-            minClustVol = _minClustVol;
-        }
-        
-
-        private void ExpandCluster(List<Vector3> points, int[] labels, bool[] visited,
-            int pointIdx, List<int> neighbors, int clusterId, double eps, int minPts, Dictionary<int, List<Vector3>> clusters)
+        private static void ExpandCluster(List<Vector3> points, int[] labels, bool[] visited,
+           int pointIdx, List<int> neighbors, int clusterId, double eps, int minPts, Dictionary<int, List<Vector3>> clusters)
         {
             var queue = new Queue<int>(neighbors);
 
@@ -59,10 +49,9 @@ namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
                     result.Add(i);
             return result;
         }
-
-        public UserPclFeatures Process(UserPclFeatures pcl)
+        public static Dictionary<int, List<Vector3>> ComputeClusters(List<Vector3> pcl,double eps, int minPts,int minClustVol)
         {
-            int n = pcl.PointCloud.Count;
+            int n = pcl.Count;
             int[] labels = new int[n];
             for (int i = 0; i < n; i++) labels[i] = -9999;
 
@@ -75,35 +64,26 @@ namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
                 if (visited[i]) continue;
                 visited[i] = true;
 
-                var neighbors = RangeQuery(pcl.PointCloud, i, eps);
+                var neighbors = RangeQuery(pcl, i, eps);
 
                 if (neighbors.Count < minPts)
                 {
                     labels[i] = -1;
                     if (!clusters.ContainsKey(-1))
                         clusters[-1] = new List<Vector3>();
-                    clusters[-1].Add(pcl.PointCloud[i]);
+                    clusters[-1].Add(pcl[i]);
                 }
                 else
                 {
                     labels[i] = clusterId;
                     if (!clusters.ContainsKey(clusterId))
                         clusters[clusterId] = new List<Vector3>();
-                    clusters[clusterId].Add(pcl.PointCloud[i]);
-                    ExpandCluster(pcl.PointCloud, labels, visited, i, neighbors, clusterId, eps, minPts, clusters);
+                    clusters[clusterId].Add(pcl[i]);
+                    ExpandCluster(pcl, labels, visited, i, neighbors, clusterId, eps, minPts, clusters);
                     clusterId++;
                 }
             }
-
-            List<Vector3> result = [];
-            clusters.Remove(-1); 
-            foreach (var key in clusters.Keys.ToList())
-                if (clusters[key].Count > minClustVol)
-                    foreach (var point in clusters[key])
-                        result.Add(point);
-
-            pcl.PointCloud = result;
-            return pcl;
+            return clusters;
         }
     }
 }
