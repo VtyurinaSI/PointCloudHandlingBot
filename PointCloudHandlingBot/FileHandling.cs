@@ -1,12 +1,6 @@
 ﻿using PointCloudHandlingBot.PointCloudProcesses;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -16,13 +10,6 @@ namespace PointCloudHandlingBot
     {
         public delegate Task PclProcessMessage(long id, string msg);
         public event PclProcessMessage? PclProcessMessageEvent;
-        public (string?, Image<Rgba32>?) MakeResultPcl(long id,UserPclFeatures pcl)
-        {
-            Image<Rgba32> image;
-            PclProcessMessageEvent?.Invoke(id, "Подготавливаю результат...");
-            image = Drawing.DrawProjection(pcl);
-            return ("Готово!", image);
-        }
 
         public async Task<string> ReadFile(ITelegramBotClient bot, User user, Document doc)
         {

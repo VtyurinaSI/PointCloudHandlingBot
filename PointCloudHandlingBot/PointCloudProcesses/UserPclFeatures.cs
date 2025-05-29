@@ -1,4 +1,5 @@
-﻿using SixLabors.ImageSharp.ColorSpaces;
+﻿using OxyPlot;
+using SixLabors.ImageSharp.ColorSpaces;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                     UpdLims(_pointCloud);
             }
         }
-        public List<Rgba32>? Colors { get; set; }
+        public List<OxyColor>? Colors { get; set; }
         public PclLims PclLims { get; set; } = new();
 
 

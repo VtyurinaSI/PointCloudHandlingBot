@@ -13,89 +13,90 @@ using System.Threading.Tasks;
 using SixLabors.ImageSharp.Drawing.Processing;
 
 using static System.Formats.Asn1.AsnWriter;
+using OxyPlot;
 
 namespace PointCloudHandlingBot.PointCloudProcesses
 {
     public static class Drawing
     {
 
-        /// <summary>
-        /// Нарисовать изображение с использованием цветов из файла
-        /// </summary>
-        /// <param name="width">Ширина изображения</param>
-        /// <param name="height">Высота изображение</param>
-        /// <param name="padding">Отступы</param>
-        /// <returns>Изображение</returns>
-        public static Image<Rgba32> DrawProjection(
-         UserPclFeatures pcl,
-          int width = 1920,
-         int height = 1080,
-         int padding = 20)
+        ///// <summary>
+        ///// Нарисовать изображение с использованием цветов из файла
+        ///// </summary>
+        ///// <param name="width">Ширина изображения</param>
+        ///// <param name="height">Высота изображение</param>
+        ///// <param name="padding">Отступы</param>
+        ///// <returns>Изображение</returns>
+        //public static Image<OxyColor> DrawProjection(
+        // UserPclFeatures pcl,
+        //  int width = 1920,
+        // int height = 1080,
+        // int padding = 20)
+        //{
+        //    if (pcl.PointCloud == null || pcl.PointCloud.Count == 0)
+        //        throw new ArgumentException("Нет точек для проекции", nameof(pcl.PointCloud));
+
+        //    float scale = GetScale(pcl.PclLims);
+        //    var image = SetEmptyImage(pcl.PclLims, ref scale);
+
+        //    float minx = pcl.PclLims.xMin, miny = pcl.PclLims.yMin;
+
+        //    int radius = 1;
+        //    OxyColor col = OxyColor.FromRgb(0, 0, 255);
+        //    int count = pcl.PointCloud.Count;
+        //    for (int i = 0; i < count; i++)
+        //    {
+        //        var p = pcl.PointCloud[i];
+        //        var c = pcl.Colors[i];
+        //        int px = (int)((p.X - minx) * scale + padding);
+        //        int py = height - 1 - (int)((p.Y - miny) * scale + padding);
+        //        if (px >= 0 && px < width && py >= 0 && py < height)
+        //        {
+        //            for (int dy = -radius; dy <= radius; dy++)
+        //                for (int dx = -radius; dx <= radius; dx++)
+        //                {
+        //                    int nx = px + dx;
+        //                    int ny = py + dy;
+        //                    if (nx >= 0 && nx < width && ny >= 0 && ny < height)
+        //                        image[nx, ny] = c;
+        //                }
+        //        }
+        //    }
+        //    return image;
+        //}
+
+        //private static Image<Rgba32> SetEmptyImage(PclLims lims, ref float scale, int maxWidth = 1920, int maxHeight = 1080, int padding = 20)
+        //{
+        //    float widthF = (lims.xMax - lims.xMin) * scale + 2 * padding;
+        //    float heightF = (lims.yMax - lims.yMin) * scale + 2 * padding;
+
+        //    int width = (int)Math.Ceiling(widthF);
+        //    int height = (int)Math.Ceiling(heightF);
+
+        //    if (width > maxWidth || height > maxHeight)
+        //    {
+        //        float widthRatio = (float)maxWidth / width;
+        //        float heightRatio = (float)maxHeight / height;
+        //        float k = Math.Min(widthRatio, heightRatio);
+
+        //        width = (int)(width * k);
+        //        height = (int)(height * k);
+        //        scale *= k;
+        //    }
+
+        //    Image<Rgba32> image = new(width, height);
+        //    var white = new Rgba32(255, 255, 255, 255);
+
+        //    for (int y = 0; y < height; y++)
+        //        for (int x = 0; x < width; x++)
+        //            image[x, y] = white;
+
+        //    return image;
+        //}
+        internal static List<OxyColor> Coloring(UserPclFeatures pcl, Func<float, float, float, OxyColor> ColorMap)
         {
-            if (pcl.PointCloud == null || pcl.PointCloud.Count == 0)
-                throw new ArgumentException("Нет точек для проекции", nameof(pcl.PointCloud));
-
-            float scale = GetScale(pcl.PclLims);
-            var image = SetEmptyImage(pcl.PclLims, ref scale);
-
-            float minx = pcl.PclLims.xMin, miny = pcl.PclLims.yMin;
-
-            int radius = 1;
-            Rgba32 col = new(0, 0, 255, 255);
             int count = pcl.PointCloud.Count;
-            for (int i = 0; i < count; i++)
-            {
-                var p = pcl.PointCloud[i];
-                var c = pcl.Colors[i];
-                int px = (int)((p.X - minx) * scale + padding);
-                int py = height - 1 - (int)((p.Y - miny) * scale + padding);
-                if (px >= 0 && px < width && py >= 0 && py < height)
-                {
-                    for (int dy = -radius; dy <= radius; dy++)
-                        for (int dx = -radius; dx <= radius; dx++)
-                        {
-                            int nx = px + dx;
-                            int ny = py + dy;
-                            if (nx >= 0 && nx < width && ny >= 0 && ny < height)
-                                image[nx, ny] = c;
-                        }
-                }
-            }
-            return image;
-        }
-
-        private static Image<Rgba32> SetEmptyImage(PclLims lims, ref float scale, int maxWidth = 1920, int maxHeight = 1080, int padding = 20)
-        {
-            float widthF = (lims.xMax - lims.xMin) * scale + 2 * padding;
-            float heightF = (lims.yMax - lims.yMin) * scale + 2 * padding;
-
-            int width = (int)Math.Ceiling(widthF);
-            int height = (int)Math.Ceiling(heightF);
-
-            if (width > maxWidth || height > maxHeight)
-            {
-                float widthRatio = (float)maxWidth / width;
-                float heightRatio = (float)maxHeight / height;
-                float k = Math.Min(widthRatio, heightRatio);
-
-                width = (int)(width * k);
-                height = (int)(height * k);
-                scale *= k;
-            }
-
-            Image<Rgba32> image = new(width, height);
-            var white = new Rgba32(255, 255, 255, 255);
-
-            for (int y = 0; y < height; y++)
-                for (int x = 0; x < width; x++)
-                    image[x, y] = white;
-
-            return image;
-        }
-        internal static List<Rgba32> Coloring(UserPclFeatures pcl, Func<float, float, float, Rgba32> ColorMap)
-        {
-            int count = pcl.PointCloud.Count;
-            Rgba32[] colors = new Rgba32[count];
+            OxyColor[] colors = new OxyColor[count];
             float min = pcl.PclLims.zMin, max = pcl.PclLims.zMax;
 
             for (int i = 0; i < count; i++)
@@ -109,7 +110,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
         /// <summary>
         /// «Cool» palette: R = t, G = 1–t, B = 1
         /// </summary>
-        internal static Rgba32 MapCool(float z, float minZ, float maxZ)
+        internal static OxyColor MapCool(float z, float minZ, float maxZ)
         {
             float t = (z - minZ) / (maxZ - minZ);
             t = Math.Clamp(t, 0f, 1f);
@@ -118,14 +119,13 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             float g = 1f - t;
             float b = 1f;
 
-            return new Rgba32(
+            return  OxyColor.FromRgb(
                 (byte)(r * 255),
                 (byte)(g * 255),
-                (byte)(b * 255),
-                255);
+                (byte)(b * 255));
         }
 
-        internal static Rgba32 MapJet(float z, float minZ, float maxZ)
+        internal static OxyColor MapJet(float z, float minZ, float maxZ)
         {
             float t = (z - minZ) / (maxZ - minZ);
             t = Math.Clamp(t, 0, 1);
@@ -134,30 +134,29 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             float g = Math.Clamp(1.5f - MathF.Abs(4f * t - 2f), 0, 1);
             float b = Math.Clamp(1.5f - MathF.Abs(4f * t - 1f), 0, 1);
 
-            return new Rgba32(
+            return  OxyColor.FromRgb(
                 (byte)(r * 255),
                 (byte)(g * 255),
-                (byte)(b * 255),
-                255);
+                (byte)(b * 255));
         }
 
-        internal static Rgba32 MapPlasma(float z, float minZ, float maxZ)
+        internal static OxyColor MapPlasma(float z, float minZ, float maxZ)
         {
             float t = (z - minZ) / (maxZ - minZ);
             t = Math.Clamp(t, 0f, 1f);
 
-            var c0 = new Rgba32(117, 11, 189, 255);
-            var c1 = new Rgba32(184, 24, 188, 255);
-            var c2 = new Rgba32(236, 28, 122, 255);
-            var c3 = new Rgba32(251, 115, 105, 255);
-            var c4 = new Rgba32(255, 235, 0, 255);
+            var c0 =  OxyColor.FromRgb(117, 11, 189);
+            var c1 =  OxyColor.FromRgb(184, 24, 188);
+            var c2 =  OxyColor.FromRgb(236, 28, 122);
+            var c3 =  OxyColor.FromRgb(251, 115, 105);
+            var c4 =  OxyColor.FromRgb(255, 235, 0);
 
-            static Rgba32 Lerp(Rgba32 a, Rgba32 b, float f)
+            static OxyColor Lerp(OxyColor a, OxyColor b, float f)
             {
                 byte R = (byte)(a.R + (b.R - a.R) * f);
                 byte G = (byte)(a.G + (b.G - a.G) * f);
                 byte B = (byte)(a.B + (b.B - a.B) * f);
-                return new Rgba32(R, G, B, 255);
+                return OxyColor.FromRgb(R, G, B);
             }
 
             if (t < 0.25f)
@@ -173,7 +172,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
         /// <summary>
         /// «Spring» palette: R = 1, G = t, B = 1–t
         /// </summary>
-        internal static Rgba32 MapSpring(float z, float minZ, float maxZ)
+        internal static OxyColor MapSpring(float z, float minZ, float maxZ)
         {
             float t = (z - minZ) / (maxZ - minZ);
             t = Math.Clamp(t, 0f, 1f);
@@ -182,11 +181,10 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             float g = t;
             float b = 1f - t;
 
-            return new Rgba32(
+            return OxyColor.FromRgb(
                 (byte)(r * 255),
                 (byte)(g * 255),
-                (byte)(b * 255),
-                255);
+                (byte)(b * 255));
         }
 
         private static float GetScale(PclLims lims,

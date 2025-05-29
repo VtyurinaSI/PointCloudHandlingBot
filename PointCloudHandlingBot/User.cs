@@ -1,4 +1,5 @@
-﻿using PointCloudHandlingBot.PointCloudProcesses;
+﻿using OxyPlot;
+using PointCloudHandlingBot.PointCloudProcesses;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,7 @@ namespace PointCloudHandlingBot
         public long ChatId { get; set; }
         public string UserName { get; set; } = null!;
 
-        public Func<float, float, float, Rgba32> ColorMap = Drawing.MapSpring;
+        public Func<float, float, float, OxyColor> ColorMap = Drawing.MapSpring;
 
         public UserPclFeatures OrigPcl { get; set; } = new();
 

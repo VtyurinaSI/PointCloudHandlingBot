@@ -1,4 +1,6 @@
-﻿using SixLabors.ImageSharp.PixelFormats;
+﻿//using SixLabors.ImageSharp.PixelFormats;
+using OxyPlot;
+using OxyPlot.SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -10,10 +12,10 @@ namespace PointCloudHandlingBot.PointCloudProcesses
 {
     class PclReading
     {
-        internal (List<Vector3> points, List<Rgba32> colors) ReadPointCloud_ply(string[] lines)
+        internal (List<Vector3> points, List<OxyColor> colors) ReadPointCloud_ply(string[] lines)
         {
             var positions = new List<Vector3>();
-            var colors = new List<Rgba32>();
+            var colors = new List<OxyColor>();
             int r = 0, g = 0, b = 0;
             for (int i = 0; i < lines.Length; i++)
             {
@@ -40,7 +42,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                     b = int.Parse(parts[2], CultureInfo.InvariantCulture);
 
 
-                    colors.Add(new Rgba32((byte)r, (byte)g, (byte)b, 255));
+                    colors.Add( OxyColor.FromRgb((byte)r,(byte)g,(byte)b));
                 }
 
             }

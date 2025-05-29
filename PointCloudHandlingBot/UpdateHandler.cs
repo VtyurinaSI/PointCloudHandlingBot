@@ -1,9 +1,13 @@
-﻿using PointCloudHandlingBot.PointCloudProcesses.PipelineSteps;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.ColorSpaces;
-using SixLabors.ImageSharp.PixelFormats;
-using System.Collections.Generic;
-using System.Numerics;
+﻿using OxyPlot;
+using OxyPlot;
+using OxyPlot.Axes;
+using OxyPlot.Axes;
+using OxyPlot.ImageSharp;
+using OxyPlot.Series;
+using OxyPlot.Series;
+using OxyPlot.SkiaSharp;
+//using SixLabors.ImageSharp;
+//using SixLabors.ImageSharp.PixelFormats;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -11,7 +15,6 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using static PointCloudHandlingBot.Program;
 using static System.Net.Mime.MediaTypeNames;
-
 namespace PointCloudHandlingBot
 {
 
@@ -22,6 +25,7 @@ namespace PointCloudHandlingBot
             text = new();
             text.OpenAnalizeKeyboardEvent += OpenPipelineKeyboard;
             text.OpenColorKeyboardEvent += OpenColorKeyboard;
+            text.SendImageDelegateEvent += SendPlot;
             file = new();
         }
         private readonly FileHandling file;
@@ -43,7 +47,7 @@ namespace PointCloudHandlingBot
         private TextMessageHandling text;
         public async Task HandleUpdateAsync(ITelegramBotClient bot, Update update, CancellationToken token)
         {
-            (string? answer, Image<Rgba32>? image) reply = (null, null);
+            string reply = string.Empty;
 
 
             User user = new(0);
@@ -64,24 +68,19 @@ namespace PointCloudHandlingBot
                 textMsg = update.Message.Text;
                 if (textMsg is not null)
                 {
-                    OnHandleUpdateStarted?.Invoke(user, textMsg);
+                    OnHandleUpdateStarted?.Invoke(user, textMsg); ;
                     reply = text.WhatDoYouWant(bot, user, textMsg);
                 }
                 if (update.Message.Document is not null)
                 {
-                    //file.PclProcessMessageEvent += SendLogToBot;
                     var doc = update.Message.Document;
                     if (doc.FileName is null) return;
                     OnHandleUpdateStarted?.Invoke(user, $"Received file \"{doc.FileName}\"");
-                    reply.answer = await file.ReadFile(bot, user, doc);
-                    reply = file.MakeResultPcl(user.ChatId, user.OrigPcl);
+                    reply = await file.ReadFile(bot, user, doc);
+                    await SendPlot(user);
                 }
-
-
             }
-            if (reply.answer is not null) await SendLogToBot(bot, token, user.ChatId, reply.answer);
-            if (reply.image is not null) await SendProjectionAsync(reply.image, user);
-
+            if (reply != string.Empty) await SendLogToBot(bot, token, user.ChatId, reply);
         }
 
         private async Task OpenColorKeyboard(ITelegramBotClient bot, long chatId)
@@ -100,34 +99,58 @@ namespace PointCloudHandlingBot
                     replyMarkup: inlineKeyboard);
         }
 
-        public async Task SendProjectionAsync(Image<Rgba32> image, User user)
+        public async Task SendPlot(User user)
         {
             using var ms = new MemoryStream();
-            image.SaveAsPng(ms);
-            ms.Position = 0;
-            var input = InputFile.FromStream(ms, fileName: "projection.png");
-            await Program.botClient.SendPhoto(
+
+            var pcl = user.CurrentPcl is null ? user.OrigPcl : user.CurrentPcl; ;
+            var model = new PlotModel();
+            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, MajorGridlineStyle = LineStyle.Solid });
+            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, MajorGridlineStyle = LineStyle.Solid });
+
+            var colorAxis = new LinearColorAxis
+            {
+                Position = AxisPosition.Right,
+                Key = "pointColors",
+                Palette = new OxyPalette(pcl.Colors),
+                Minimum = 0,
+                Maximum = pcl.Colors.Count - 1,
+                HighColor = OxyColors.Undefined,
+                LowColor = OxyColors.Undefined,
+                IsAxisVisible = false
+            };
+            model.Axes.Add(colorAxis);
+            var scatter = new ScatterSeries
+            {
+                MarkerType = MarkerType.Circle,
+                MarkerSize = 2,
+                ColorAxisKey = colorAxis.Key
+            };
+            for (int i = 0; i < pcl.PointCloud.Count; i++)
+                scatter.Points.Add(new ScatterPoint(pcl.PointCloud[i].X, pcl.PointCloud[i].Y, scatter.MarkerSize, value: i));
+            model.Series.Add(scatter);
+            var exporter = new OxyPlot.SkiaSharp.PngExporter() { Height = 600, Width = 800 };
+            exporter.Export(model, ms);
+            ms.Seek(0, SeekOrigin.Begin);
+            await botClient.SendPhoto(
                 chatId: user.ChatId,
-                photo: input,
-                caption: "Проекция облака точек");
-            image.Dispose();
+                photo: InputFile.FromStream(ms, fileName: "projection.png"),
+                caption: "Вот ваш график"
+            );
         }
 
         private async Task OpenPipelineKeyboard(ITelegramBotClient bot, long chatId)
         {
             OnHandleUpdateCompleted?.Invoke(null, "Открываю клавиатуру для выбора этапов обработки облака точек");
-            InlineKeyboardMarkup inlineKeyboard = new(
-            new[]
-            {
-
+            InlineKeyboardMarkup inlineKeyboard = new(new[] {
                     new[] {InlineKeyboardButton.WithCallbackData("Воксельный фильтр", "voxel") },
-                   new[] { InlineKeyboardButton.WithCallbackData("DBSCAN", "dbscan")},
+                    new[] {InlineKeyboardButton.WithCallbackData("DBSCAN", "dbscan")},
                     new[] {InlineKeyboardButton.WithCallbackData("Сглаживание по Гауссу", "gauss")},
                     new[] {InlineKeyboardButton.WithCallbackData("Поворот и перемещение", "transform")},
                     new[] {InlineKeyboardButton.WithCallbackData("Начать расчет", "gopipe")},
-                    new[] {InlineKeyboardButton.WithCallbackData("Отменить обработку", "resetpipe")},
+                    new[] {InlineKeyboardButton.WithCallbackData("Отменить обработку", "resetpipe")}}
+                    );
 
-            });
             await bot.SendMessage(
                     chatId: chatId,
                     text: "Выберите вариант:",

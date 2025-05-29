@@ -22,18 +22,18 @@ namespace PointCloudHandlingBot
         public delegate Task KeyboardDelegate(ITelegramBotClient bot, long chatId);
         public event KeyboardDelegate? OpenAnalizeKeyboardEvent;
         public event KeyboardDelegate? OpenColorKeyboardEvent;
-
+        public delegate Task SendImageDelegate(User user);
+        public event SendImageDelegate? SendImageDelegateEvent;
         private const string hello = """
                             Привет! Я умею обрабатывать объемные облака точек!
                             Рисую в палитрах:
                             • Spring (по умолчанию)
                             • Jet
-                            • Plasma
+                            • Plasma                            
                             • Cool
-
                             Чтобы их применить, перед отображением напиши мне /colorMap<палитра>, например, /colorMapCool.
                             """;
-        private (string?, Image<Rgba32>?) GoPipe(User user)
+        private void GoPipe(User user)
         {
             FileHandling file = new();
             user.Pipe.Condition = PipeLine.PipeCondition.None;
@@ -42,34 +42,35 @@ namespace PointCloudHandlingBot
             user.Pipe.Execute(user.CurrentPcl);
             user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
             user.Pipe = new();
-            return file.MakeResultPcl(user.ChatId, user.CurrentPcl);
-
+            user.Pipe.Condition = PipeLine.PipeCondition.None;
+            SendImageDelegateEvent?.Invoke(user);
         }
-        public (string?, Image<Rgba32>?) WhatDoYouWant(ITelegramBotClient botClient, User user, string textMsg)
+
+        public string WhatDoYouWant(ITelegramBotClient botClient, User user, string textMsg)
         {
 
-            (string? text, Image<Rgba32>? img) answer = (null, null);
+            string answer = string.Empty;
             FileHandling file = new();
             textMsg = textMsg.Trim();
             if (user.Pipe.Condition == PipeLine.PipeCondition.SettingStageType)
             {
-                if (textMsg == "gopipe") answer = GoPipe(user);
-                if (textMsg == "resetpipe")
+                switch (textMsg)
                 {
-                    user.Pipe = new();
+                    case "gopipe": GoPipe(user); break;
+                    case "resetpipe":
 
-                    answer = file.MakeResultPcl(user.ChatId, user.OrigPcl);
-                    answer.text = """
+                        user.Pipe = new();
+                        answer = """
                         Составление порядка обработки отменено. 
                         Напоминаю, как выглядит твое сырое облако точек. 
                         Что теперь будем делать?
                         """;
-                }
-                else
-                {
-                    user.Pipe.StageName = textMsg;
-                    answer.text = "Ок, теперь введи параметры";
-                    user.Pipe.Condition = PipeLine.PipeCondition.SettingStageParams;
+                        break;
+                    default:
+                        user.Pipe.StageName = textMsg;
+                        answer = "Ок, теперь введи параметры";
+                        user.Pipe.Condition = PipeLine.PipeCondition.SettingStageParams;
+                        break;
                 }
             }
             else
@@ -86,27 +87,29 @@ namespace PointCloudHandlingBot
                 else
                     switch (textMsg)
                     {
-                        case "/start": answer = (hello, null); break;
+                        case "/start": answer = hello; break;
                         case string m when m.StartsWith("/colorMap"):
                             string colormap = m.Substring(9);
-                            answer.text = SetColorMap(user, colormap);
+                            answer = SetColorMap(user, colormap);
                             if (user.OrigPcl.PointCloud is null) break;
                             var pcl = GetActualPcl(user);
                             pcl.Colors = Drawing.Coloring(pcl, user.ColorMap);
 
-                            answer = file.MakeResultPcl(user.ChatId, pcl);
+                            SendImageDelegateEvent?.Invoke(user);
                             break;
                         case "/analyze":
                             user.Pipe = new();
                             user.Pipe.Condition = PipeLine.PipeCondition.SettingStageType;
                             OpenAnalizeKeyboardEvent?.Invoke(botClient, user.ChatId);
+                            answer = "Пошли в анализ";
                             break;
                         case "/setColor":
                             OpenColorKeyboardEvent?.Invoke(botClient, user.ChatId);
+                            answer = "Пошли в покрас";
                             break;
                         default:
 
-                            answer = ("че :/", null);
+                            answer = "че :/";
 
                             break;
                     }
