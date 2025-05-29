@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
 {
-    class Voxel : IAnalyzePipelineSteps
+    class Voxel// : IAnalyzePipelineSteps
     {
         private double voxelSize;
         internal Voxel(double _voxelSize)
@@ -51,7 +51,6 @@ namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
                 filteredPoints.Add(new Vector3(sumX, sumY, sumZ) / count);
             }
             pcl.PointCloud = filteredPoints;
-            return pcl;
         }
 
     }
