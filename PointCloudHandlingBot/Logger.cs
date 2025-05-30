@@ -12,7 +12,7 @@ namespace PointCloudHandlingBot
     /// <summary>
     /// Класс для логирования процесса
     /// </summary>
-    internal class Logger : ILogger
+    public class Logger : ILogger
     {
         private readonly ITelegramBotClient _botClient;
         private readonly string _category;

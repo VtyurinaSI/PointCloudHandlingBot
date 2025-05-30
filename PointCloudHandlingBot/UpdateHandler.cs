@@ -84,7 +84,7 @@ namespace PointCloudHandlingBot
             var textMsg = callbackQuery.Data;
             lp = new(bot, user.ChatId);
             logger = lp.CreateLogger("logs");
-            return text.WhatDoYouWant(user, textMsg, logger);
+            return text.WhatDoYouWant(user, textMsg, (Logger)logger);
         }
 
         private async Task<List<IMsgPipelineSteps>> HandleMessageAsync(Message message, User user)
@@ -95,7 +95,7 @@ namespace PointCloudHandlingBot
             if (textMsg is not null)
             {
                 OnHandleUpdateStarted?.Invoke(user, textMsg);
-                return text.WhatDoYouWant(user, textMsg, logger);
+                return text.WhatDoYouWant(user, textMsg, (Logger)logger);
             }
             if (message.Document is not null)
             {
@@ -119,7 +119,7 @@ namespace PointCloudHandlingBot
             };
             OnHandleUpdateStarted?.Invoke(user, $"Received file \"{doc.FileName}\"");
             var reply = await file.ReadFile(bot, user, doc);
-
+            user.CurrentPcl = user.OrigPcl;
             return new List<IMsgPipelineSteps>
             {
                 new TextMsg(reply),

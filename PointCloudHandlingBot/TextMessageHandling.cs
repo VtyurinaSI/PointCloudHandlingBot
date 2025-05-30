@@ -2,20 +2,7 @@
 using PointCloudHandlingBot.Commands;
 using PointCloudHandlingBot.MsgPipeline;
 using PointCloudHandlingBot.PointCloudProcesses;
-using PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps;
-using SixLabors.Fonts.Unicode;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Reflection.Metadata;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
-using Telegram.Bot;
-using Telegram.Bot.Types;
 
 namespace PointCloudHandlingBot
 {
@@ -34,7 +21,7 @@ namespace PointCloudHandlingBot
         public readonly Keyboards keyboards = new();
 
 
-        public List<IMsgPipelineSteps> WhatDoYouWant(User user, string textMsg, ILogger logger)
+        public List<IMsgPipelineSteps> WhatDoYouWant(User user, string textMsg, Logger logger)
         {
 
             textMsg = textMsg.Trim();
@@ -42,23 +29,33 @@ namespace PointCloudHandlingBot
             {
                 if (!user.Command.IsInited)
                 {
-                    user.Command.SetParseParts(textMsg);
+                    logger.LogBot("Ожидание параметра", LogLevel.Information, user,
+                        user.Command.SetParseParts(textMsg));
                     if (user.Command.IsInited)
+                    {
                         user.Command.Process(user);
+                        return
+                            [
+                                new ImageMsg(Drawing.Make3dImg),
+                                new KeyboardMsg(keyboards.MainMenu)
+                            ];
+                    }
                 }
             }
-            if (textMsg == "/voxel")
+            else
             {
-                user.CurrentPcl = user.OrigPcl;
-                user.Command = new VoxelCmd(logger, keyboards);
-
+                user.Command = CommandSimpleFactory.CreateCommand(textMsg, logger, keyboards);
+                logger.LogBot($"Создана команда \"{textMsg}\". Ожидание параметра", LogLevel.Information, user,
+                    user.Command.FirstParName);
             }
-            return user.Pipe.Condition switch
-            {
-                AnalyzePipeLine.PipeCondition.SettingStageType => HandleSettingStageType(user, textMsg),
-                AnalyzePipeLine.PipeCondition.SettingStageParams => HandleSettingStageParams(user, textMsg),
-                _ => HandleDefault(user, textMsg)
-            };
+            return [];
+
+            //    user.Pipe.Condition switch
+            //{
+            //    AnalyzePipeLine.PipeCondition.SettingStageType => HandleSettingStageType(user, textMsg),
+            //    AnalyzePipeLine.PipeCondition.SettingStageParams => HandleSettingStageParams(user, textMsg),
+            //    _ => HandleDefault(user, textMsg)
+            //};
         }
 
         private List<IMsgPipelineSteps> HandleSettingStageType(User user, string textMsg)

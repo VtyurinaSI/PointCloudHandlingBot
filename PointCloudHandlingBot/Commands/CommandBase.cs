@@ -13,19 +13,20 @@ namespace PointCloudHandlingBot.Commands
         {
             CommandName = name;
         }
+        public Logger baseLogger;
         public List<string> ParamsDescription;
         public int ParsePartsNum { get; set; }
         public string CommandName { get; set; }
         private protected List<double> ParseParts { get; set; } = [];
         private protected List<string> ParamsDescriptions { get; set; }
         public bool IsInited => ParseParts.Count == ParsePartsNum;
-
+        public string FirstParName => ParamsDescriptions[0];
         public string SetParseParts(string textMsg)
         {
             if (double.TryParse(textMsg.Trim().Replace('.', ','), out double result))
             {
                 ParseParts.Add(result);
-                return ParseParts.Count < ParsePartsNum ? ParamsDescriptions[ParseParts.Count] : "Параметры применены";
+                return ParseParts.Count < ParsePartsNum ? ParamsDescriptions[ParseParts.Count] : "Параметры установлены";
             }
             else
                 return "Неверный формат параметра. Пожалуйста, введи число";

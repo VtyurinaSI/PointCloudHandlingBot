@@ -15,12 +15,14 @@ namespace PointCloudHandlingBot.Commands
     {
         private readonly Logger logger;
         private readonly Keyboards keyboards;
-        internal VoxelCmd(ILogger logger,Keyboards keyboards) : base("/voxel")
+        internal VoxelCmd(ILogger logger, Keyboards keyboards) : base("/voxel")
         {
             this.logger = (Logger)logger;
+            baseLogger = (Logger)logger;
             this.keyboards = keyboards;
             ParsePartsNum = 1;
-            ParamsDescriptions = [..Enumerable.Repeat("Param", ParsePartsNum)];
+            ParamsDescriptions = [.. Enumerable.Repeat("Param", ParsePartsNum)];
+            ParamsDescriptions.Add("Принял параметры");
         }
 
         public override List<IMsgPipelineSteps> Process(User user)
@@ -33,7 +35,7 @@ namespace PointCloudHandlingBot.Commands
 
             logger.LogBot($"Воксельный фильтр применен",
                 LogLevel.Information, user, "Готово");
-
+            user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl,user.ColorMap);
             return [new TextMsg("Воксель"),
                 new ImageMsg(Drawing.Make3dImg),
                 new KeyboardMsg(keyboards.MainMenu)];
