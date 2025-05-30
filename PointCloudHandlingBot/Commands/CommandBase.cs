@@ -7,24 +7,31 @@ using System.Threading.Tasks;
 
 namespace PointCloudHandlingBot.Commands
 {
-    internal abstract class CommandBase
+    public abstract class CommandBase
     {
-        internal CommandBase(string name)
+        public CommandBase(string name)
         {
             CommandName = name;
         }
         public List<string> ParamsDescription;
-        internal int ParsePartsNum { get; set; }
-        internal string CommandName { get; set; } 
-        private protected List<string> ParseParts { get; set; } 
-        public void SetParseParts(string textMsg) => ParseParts.Add(textMsg.Trim());
+        public int ParsePartsNum { get; set; }
+        public string CommandName { get; set; }
+        private protected List<double> ParseParts { get; set; } = [];
+        private protected List<string> ParamsDescriptions { get; set; }
+        public bool IsInited => ParseParts.Count == ParsePartsNum;
+
+        public string SetParseParts(string textMsg)
+        {
+            if (double.TryParse(textMsg.Trim().Replace('.', ','), out double result))
+            {
+                ParseParts.Add(result);
+                return ParseParts.Count < ParsePartsNum ? ParamsDescriptions[ParseParts.Count] : "Параметры применены";
+            }
+            else
+                return "Неверный формат параметра. Пожалуйста, введи число";
+
+        }
 
         public abstract List<IMsgPipelineSteps> Process(User user);
-        private protected void InvokeSendConditionEvent(User user,  string msg)
-        {
-            SendConditionEvent?.Invoke(user, msg);
-        }
-        public delegate void SendConditionDelegate(User user, string msg);
-        public event SendConditionDelegate? SendConditionEvent;
     }
 }

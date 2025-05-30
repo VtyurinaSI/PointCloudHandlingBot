@@ -1,4 +1,6 @@
-﻿using PointCloudHandlingBot.MsgPipeline;
+﻿using Microsoft.Extensions.Logging;
+using PointCloudHandlingBot.Commands;
+using PointCloudHandlingBot.MsgPipeline;
 using PointCloudHandlingBot.PointCloudProcesses;
 using PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps;
 using SixLabors.Fonts.Unicode;
@@ -30,10 +32,26 @@ namespace PointCloudHandlingBot
                             Чтобы их применить, перед отображением напиши мне /colorMap<палитра>, например, /colorMapCool.
                             """;
         public readonly Keyboards keyboards = new();
-        
-        public List<IMsgPipelineSteps> WhatDoYouWant(User user, string textMsg)
+
+
+        public List<IMsgPipelineSteps> WhatDoYouWant(User user, string textMsg, ILogger logger)
         {
+
             textMsg = textMsg.Trim();
+            if (user.Command is not null)
+            {
+                if (!user.Command.IsInited)
+                {
+                    user.Command.SetParseParts(textMsg);
+                }
+                else user.Command.Process(user);
+            }
+            if (textMsg == "/voxel")
+            {
+                user.CurrentPcl = user.OrigPcl;
+                user.Command = new VoxelCmd(logger, keyboards);
+            
+            }
             return user.Pipe.Condition switch
             {
                 AnalyzePipeLine.PipeCondition.SettingStageType => HandleSettingStageType(user, textMsg),
@@ -136,7 +154,7 @@ namespace PointCloudHandlingBot
         private void ObjectsClustering(User user, double eps, int minPts, int minClustVol)
         {
             Clustering clustering = new();
-            user.CurrentPcl.Clusters=clustering.ClusteObjects(user, eps, minPts, minClustVol);
+            user.CurrentPcl.Clusters = clustering.ClusteObjects(user, eps, minPts, minClustVol);
         }
 
         private List<IMsgPipelineSteps> ApplyColorMap(User user, string textMsg)

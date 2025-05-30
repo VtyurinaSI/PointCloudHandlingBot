@@ -23,7 +23,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
         public PipeCondition Condition { get; set; } = PipeCondition.None;
         public  void CreateStep()
         {
-            IAnalyzePipelineSteps step = StageName switch
+            /*IAnalyzePipelineSteps step = StageName switch
             {
                 "transform" => new Translate(
                     new System.Numerics.Vector3((float)StageParams[0], (float)StageParams[1], (float)StageParams[2]),
@@ -33,8 +33,8 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                 "dbscan" => new DBSCANfilt(StageParams[0], (int)StageParams[1], (int)StageParams[2]),
                 _ => throw new ArgumentException($"Неподдерживаемый этап '{StageName}'")
             };
-
-            _steps.Add(step);
+            
+            _steps.Add(step);*/
         }
 
         public void Execute(PclFeatures usPpcl)

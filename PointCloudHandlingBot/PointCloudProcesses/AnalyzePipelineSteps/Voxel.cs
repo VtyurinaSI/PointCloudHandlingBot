@@ -14,7 +14,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
         {
             voxelSize = _voxelSize;
         }
-        public PclFeatures Process(PclFeatures pcl)
+        public void Process(PclFeatures pcl)
         {
 
             int numPoints = pcl.PointCloud.Count;

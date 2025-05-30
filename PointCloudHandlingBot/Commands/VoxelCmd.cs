@@ -1,4 +1,5 @@
-﻿using PointCloudHandlingBot.MsgPipeline;
+﻿using Microsoft.Extensions.Logging;
+using PointCloudHandlingBot.MsgPipeline;
 using PointCloudHandlingBot.PointCloudProcesses;
 using PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps;
 using System;
@@ -12,20 +13,32 @@ namespace PointCloudHandlingBot.Commands
 {
     internal class VoxelCmd : CommandBase
     {
-        internal VoxelCmd() : base("/voxel") { }
+        private readonly Logger logger;
+        private readonly Keyboards keyboards;
+        internal VoxelCmd(ILogger logger,Keyboards keyboards) : base("/voxel")
+        {
+            this.logger = (Logger)logger;
+            this.keyboards = keyboards;
+            ParsePartsNum = 1;
+            ParamsDescriptions = [..Enumerable.Repeat("Param", ParsePartsNum)];
+        }
+
         public override List<IMsgPipelineSteps> Process(User user)
         {
-            InvokeSendConditionEvent(user, "Применяю воксельный фильтр...");
+            logger.LogBot($"Применение воксельного фильтра. Параметры: {string.Join(" ", ParseParts)}",
+                LogLevel.Information, user, "Применяю воксельный фильтр...");
 
-            Voxel voxel = new(double.Parse(ParseParts[0]));
+            Voxel voxel = new(ParseParts[0]);
             voxel.Process(user.CurrentPcl);
 
-            InvokeSendConditionEvent(user, "Готово");
+            logger.LogBot($"Воксельный фильтр применен",
+                LogLevel.Information, user, "Готово");
+
             return [new TextMsg("Воксель"),
                 new ImageMsg(Drawing.Make3dImg),
                 new KeyboardMsg(keyboards.MainMenu)];
         }
 
-        
+
     }
 }

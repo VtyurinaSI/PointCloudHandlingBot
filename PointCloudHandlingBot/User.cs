@@ -1,4 +1,5 @@
 ﻿using OxyPlot;
+using PointCloudHandlingBot.Commands;
 using PointCloudHandlingBot.PointCloudProcesses;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
@@ -27,6 +28,8 @@ namespace PointCloudHandlingBot
         public PclFeatures? CurrentPcl { get;  set; }
 
         public AnalyzePipeLine Pipe { get; set; } = new();
+
+        public CommandBase Command { get; set; } 
 
     }
 }

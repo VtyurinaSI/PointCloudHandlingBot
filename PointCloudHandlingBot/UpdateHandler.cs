@@ -1,4 +1,5 @@
-﻿using PointCloudHandlingBot.MsgPipeline;
+﻿using Microsoft.Extensions.Logging;
+using PointCloudHandlingBot.MsgPipeline;
 using PointCloudHandlingBot.PointCloudProcesses;
 using System.Threading.Tasks;
 using Telegram.Bot;
@@ -17,7 +18,10 @@ namespace PointCloudHandlingBot
             text = new();
             this.bot = bot;
             file = new();
+             
         }
+        LoggerProvider lp ;
+        ILogger logger ;
         ITelegramBotClient bot;
         private readonly FileHandling file;
 
@@ -36,7 +40,7 @@ namespace PointCloudHandlingBot
             var user = GetUserFromUpdate(update);
             if (user is null)
                 return;
-
+            
             List<IMsgPipelineSteps> message = [];
             switch (update.Type)
             {
@@ -78,17 +82,20 @@ namespace PointCloudHandlingBot
         private List<IMsgPipelineSteps> HandleCallbackQuery(CallbackQuery callbackQuery, User user)
         {
             var textMsg = callbackQuery.Data;
-            return text.WhatDoYouWant(user, textMsg);
+            lp = new(bot, user.ChatId);
+            logger = lp.CreateLogger("logs");
+            return text.WhatDoYouWant(user, textMsg, logger);
         }
 
         private async Task<List<IMsgPipelineSteps>> HandleMessageAsync(Message message, User user)
         {
             var textMsg = message.Text;
-
+            lp = new(bot, user.ChatId);
+            logger = lp.CreateLogger("logs");
             if (textMsg is not null)
             {
                 OnHandleUpdateStarted?.Invoke(user, textMsg);
-                return text.WhatDoYouWant(user, textMsg);
+                return text.WhatDoYouWant(user, textMsg, logger);
             }
             if (message.Document is not null)
             {
