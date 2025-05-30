@@ -26,6 +26,7 @@ namespace PointCloudHandlingBot.Commands
                 "/colorMap" => new ColorMapCmd(log),
                 "/reset" => new ResetCmd(log),
                 "/start" => new StartCmd(log),
+                "/stopFilter" => new StopFilterCmd(log),
                 _ => throw new ArgumentException($"Команда {commandName} не поддерживается.")
             };
         }

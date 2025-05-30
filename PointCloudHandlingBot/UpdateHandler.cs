@@ -119,7 +119,7 @@ namespace PointCloudHandlingBot
             };
             OnHandleUpdateStarted?.Invoke(user, $"Received file \"{doc.FileName}\"");
             var reply = await file.ReadFile(bot, user, doc);
-            user.CurrentPcl = user.OrigPcl;
+            ResetPcl.ResetPclHandle(user);
             return new List<IMsgPipelineSteps>
             {
                 new TextMsg(reply),

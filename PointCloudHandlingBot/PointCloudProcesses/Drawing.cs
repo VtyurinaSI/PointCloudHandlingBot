@@ -23,10 +23,8 @@ namespace PointCloudHandlingBot.PointCloudProcesses
 {
     public static class Drawing
     {
-
         public static PlotModel Make3dImg(User user)
         {
-            //Task.Run(() => SendLogToBot(user, "Секунду, отрисовываю..."));
             var pcl = user.CurrentPcl is null ? user.OrigPcl : user.CurrentPcl;
 
             var lims = pcl.PclLims;
@@ -106,7 +104,6 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             {
                 foreach (var cl in user.CurrentPcl.Clusters)
                 {
-                    // а) прямоугольник
                     var rect = new RectangleAnnotation
                     {
                         MinimumX = cl.Lims.xMin,
@@ -115,11 +112,10 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                         MaximumY = cl.Lims.yMax,
                         Stroke = OxyColors.Black,
                         StrokeThickness = 1,
-                        Fill = OxyColors.Undefined    // прозрачный фон
+                        Fill = OxyColors.Undefined   
                     };
                     model.Annotations.Add(rect);
 
-                    // б) центроид
                     var pt = new PointAnnotation
                     {
                         X = cl.Centroid.X,
@@ -132,7 +128,6 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                     };
                     model.Annotations.Add(pt);
 
-                    // в) подпись под левым нижним углом
                     var label = new TextAnnotation
                     {
                         Text = $"Size: {cl.Size.X:0.00}x{cl.Size.Y:0.00}x{cl.Size.Z:0.00}",
@@ -147,7 +142,6 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                     model.Annotations.Add(label);
                 }
             }
-            //model.Padding = new OxyThickness(left: 60, top: 40, right: 60, bottom: 40);
             return model;
         }
         internal static List<OxyColor> Coloring(PclFeatures pcl, Func<float, float, float, OxyColor> ColorMap)

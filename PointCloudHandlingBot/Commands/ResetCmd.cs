@@ -1,4 +1,5 @@
 ﻿using PointCloudHandlingBot.MsgPipeline;
+using PointCloudHandlingBot.PointCloudProcesses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,9 @@ namespace PointCloudHandlingBot.Commands
         }
         public override List<IMsgPipelineSteps> Process(User user)
         {
-            return [new TextMsg("Предобработка выполнена"),
+            ResetPcl.ResetPclHandle(user);
+            return [new TextMsg("Обработка сброшена, вот сырое облако точек"),
+                    new ImageMsg(Drawing.Make3dImg),
             new KeyboardMsg(Keyboards.MainMenu)];
         }
     }

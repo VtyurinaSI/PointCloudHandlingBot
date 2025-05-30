@@ -14,7 +14,8 @@ namespace PointCloudHandlingBot
                     new[] {InlineKeyboardButton.WithCallbackData("DBSCAN", "/DBSCANfilt")},
                     new[] {InlineKeyboardButton.WithCallbackData("Сглаживание по Гауссу", "/gauss")},
                     new[] {InlineKeyboardButton.WithCallbackData("Поворот и перемещение", "transform")},
-                    new[] {InlineKeyboardButton.WithCallbackData("Завершить предобработку", "/reset")}}
+                    new[] {InlineKeyboardButton.WithCallbackData("Завершить предобработку", "/stopFilter") },
+                    new[] {InlineKeyboardButton.WithCallbackData("Сбросить всю обработку", "/reset")}}
                     );
         public static InlineKeyboardMarkup ColorMap { get; set; } = new(
             new[]
