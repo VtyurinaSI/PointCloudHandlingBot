@@ -27,6 +27,8 @@ namespace PointCloudHandlingBot.Commands
                 "/reset" => new ResetCmd(log),
                 "/start" => new StartCmd(log),
                 "/stopFilter" => new StopFilterCmd(log),
+                "/delFloor" => new DelFloorCmd(log),
+                "/delWall" => new DelWallCmd(log),
                 _ => throw new ArgumentException($"Команда {commandName} не поддерживается.")
             };
         }

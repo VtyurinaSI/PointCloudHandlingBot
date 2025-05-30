@@ -131,7 +131,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                     var label = new TextAnnotation
                     {
                         Text = $"Size: {cl.Size.X:0.00}x{cl.Size.Y:0.00}x{cl.Size.Z:0.00}",
-                        TextPosition = new DataPoint(cl.Lims.xMin, cl.Lims.yMin),
+                        TextPosition = new DataPoint(cl.Lims.xMin, cl.Lims.yMin-yRange*0.008),
                         FontSize = 14,
                         TextVerticalAlignment = VerticalAlignment.Top,
                         TextHorizontalAlignment = HorizontalAlignment.Left,
