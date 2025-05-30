@@ -2,37 +2,32 @@
 using PointCloudHandlingBot.MsgPipeline;
 using PointCloudHandlingBot.PointCloudProcesses;
 using PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace PointCloudHandlingBot.Commands
 {
-    internal class VoxelCmd : CommandBase
+    internal class DBSCANfiltCmd : CommandBase
     {
-        internal VoxelCmd(Logger logger)
-            : base("/voxel", logger,1, [.. Enumerable.Repeat("Param", 1)]) { }
+        private static readonly List<string> paramsDescriptions =
+            ["Внутрикластерное расстояние",
+             "Минимальное количество точек в кластере",
+             "Минимальное количество точек в кластере для удаления шума"];
+        internal DBSCANfiltCmd(Logger logger)
+            : base("/DBSCANfilt", logger, 3, paramsDescriptions) { }
 
         public override List<IMsgPipelineSteps> Process(User user)
         {
             logger.LogBot($"Применение воксельного фильтра. Параметры: {string.Join(" ", ParseParts)}",
-                LogLevel.Information, user, "Применяю воксельный фильтр...");
+                LogLevel.Information, user, "Удаляю шум...");
 
-            Voxel voxel = new(ParseParts[0]);
-            voxel.Process(user.CurrentPcl);
+            DBSCANfilt dbscan = new(ParseParts[0], (int)ParseParts[1], (int)ParseParts[2]);
+            dbscan.Process(user.CurrentPcl);
 
-            logger.LogBot($"Воксельный фильтр применен",
+            logger.LogBot($"Шум удален",
                 LogLevel.Information, user, "Готово");
             user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
             return [new TextMsg("Воксель"),
                 new ImageMsg(Drawing.Make3dImg),
                 new KeyboardMsg(Keyboards.Analyze)];
         }
-
-
     }
 }

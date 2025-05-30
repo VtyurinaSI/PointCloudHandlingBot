@@ -7,29 +7,29 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace PointCloudHandlingBot
 {
-    public class Keyboards
+    public static class Keyboards
     {
-        public InlineKeyboardMarkup Analyze { get; set; } = new(new[] {
-                    new[] {InlineKeyboardButton.WithCallbackData("Воксельный фильтр", "voxel") },
-                    new[] {InlineKeyboardButton.WithCallbackData("DBSCAN", "dbscan")},
-                    new[] {InlineKeyboardButton.WithCallbackData("Сглаживание по Гауссу", "gauss")},
+        public static InlineKeyboardMarkup Analyze { get; set; } = new(new[] {
+                    new[] {InlineKeyboardButton.WithCallbackData("Воксельный фильтр", "/voxel") },
+                    new[] {InlineKeyboardButton.WithCallbackData("DBSCAN", "/DBSCANfilt")},
+                    new[] {InlineKeyboardButton.WithCallbackData("Сглаживание по Гауссу", "/gauss")},
                     new[] {InlineKeyboardButton.WithCallbackData("Поворот и перемещение", "transform")},
-                    new[] {InlineKeyboardButton.WithCallbackData("Начать расчет", "gopipe")},
-                    new[] {InlineKeyboardButton.WithCallbackData("Отменить обработку", "resetpipe")}}
+                    new[] {InlineKeyboardButton.WithCallbackData("Начать расчет", "/go")},
+                    new[] {InlineKeyboardButton.WithCallbackData("Сбросить всю обработку", "/reset")}}
                     );
-        public InlineKeyboardMarkup ColorMap { get; set; } = new(
+        public static InlineKeyboardMarkup ColorMap { get; set; } = new(
             new[]
             {
-                new[] { InlineKeyboardButton.WithCallbackData("Cool", "/colorMapCool") },
-                new[] { InlineKeyboardButton.WithCallbackData("Spring", "/colorMapSpring") },
-                new[] { InlineKeyboardButton.WithCallbackData("Plasma", "/colorMapPlasma") },
-                new[] { InlineKeyboardButton.WithCallbackData("Jet", "/colorMapJet") },
+                new[] { InlineKeyboardButton.WithCallbackData("Spring", "0") },
+                new[] { InlineKeyboardButton.WithCallbackData("Cool", "1") },
+                new[] { InlineKeyboardButton.WithCallbackData("Plasma", "2") },
+                new[] { InlineKeyboardButton.WithCallbackData("Jet", "3") },
             });
 
-        public InlineKeyboardMarkup MainMenu { get; set; } = new(new[] {
-                    new[] {InlineKeyboardButton.WithCallbackData("Выбрать цветовую карту", "/setColor") },
+        public static InlineKeyboardMarkup MainMenu { get; set; } = new(new[] {
+                    new[] {InlineKeyboardButton.WithCallbackData("Выбрать цветовую карту", "/colorMap") },
                     new[] {InlineKeyboardButton.WithCallbackData("Обработать изображение", "/analyze")},
-                    new[] {InlineKeyboardButton.WithCallbackData("Кластеризировать объекты", "/cluster0.02:10:150")},
+                    new[] {InlineKeyboardButton.WithCallbackData("Кластеризировать объекты", "/cluster")},
         });
     }
 }

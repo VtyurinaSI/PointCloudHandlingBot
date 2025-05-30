@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
 {
-    internal class DBSCANfilt : IAnalyzePipelineSteps
+    internal class DBSCANfilt //: IAnalyzePipelineSteps
     {
         private readonly double eps;
         private readonly int minPts;

@@ -21,7 +21,7 @@ namespace PointCloudHandlingBot
              
         }
         LoggerProvider lp ;
-        ILogger logger ;
+        Logger logger ;
         ITelegramBotClient bot;
         private readonly FileHandling file;
 
@@ -82,8 +82,9 @@ namespace PointCloudHandlingBot
         private List<IMsgPipelineSteps> HandleCallbackQuery(CallbackQuery callbackQuery, User user)
         {
             var textMsg = callbackQuery.Data;
+            OnHandleUpdateStarted?.Invoke(user, textMsg);
             lp = new(bot, user.ChatId);
-            logger = lp.CreateLogger("logs");
+            logger = (Logger)lp.CreateLogger("logs");
             return text.WhatDoYouWant(user, textMsg, (Logger)logger);
         }
 
@@ -91,10 +92,10 @@ namespace PointCloudHandlingBot
         {
             var textMsg = message.Text;
             lp = new(bot, user.ChatId);
-            logger = lp.CreateLogger("logs");
+            logger = (Logger)lp.CreateLogger("logs");
             if (textMsg is not null)
             {
-                OnHandleUpdateStarted?.Invoke(user, textMsg);
+                
                 return text.WhatDoYouWant(user, textMsg, (Logger)logger);
             }
             if (message.Document is not null)
@@ -105,17 +106,16 @@ namespace PointCloudHandlingBot
             return new List<IMsgPipelineSteps>
             {
                 new TextMsg("Я не понимаю, что вы хотите от меня!"),
-                new KeyboardMsg(new Keyboards().MainMenu)
+                new KeyboardMsg(Keyboards.MainMenu)
             };
         }
 
         private async Task<List<IMsgPipelineSteps>> HandleDocumentAsync(User user, Document doc)
         {
-            var keyboard = new Keyboards();
             if (doc.FileName is null) return new List<IMsgPipelineSteps>
             {
                 new TextMsg("Ошибка в имени документа"),
-                new KeyboardMsg(keyboard.MainMenu)
+                new KeyboardMsg(Keyboards.MainMenu)
             };
             OnHandleUpdateStarted?.Invoke(user, $"Received file \"{doc.FileName}\"");
             var reply = await file.ReadFile(bot, user, doc);
@@ -124,7 +124,7 @@ namespace PointCloudHandlingBot
             {
                 new TextMsg(reply),
                 new ImageMsg(Drawing.Make3dImg),
-                new KeyboardMsg(keyboard.MainMenu)
+                new KeyboardMsg(Keyboards.MainMenu)
             };
         }
     }

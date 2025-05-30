@@ -29,7 +29,7 @@ namespace PointCloudHandlingBot
 
         public AnalyzePipeLine Pipe { get; set; } = new();
 
-        public CommandBase Command { get; set; } 
+        public CommandBase? Command { get; set; } 
 
     }
 }
