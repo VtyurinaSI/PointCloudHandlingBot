@@ -43,14 +43,15 @@ namespace PointCloudHandlingBot
                 if (!user.Command.IsInited)
                 {
                     user.Command.SetParseParts(textMsg);
+                    if (user.Command.IsInited)
+                        user.Command.Process(user);
                 }
-                else user.Command.Process(user);
             }
             if (textMsg == "/voxel")
             {
                 user.CurrentPcl = user.OrigPcl;
                 user.Command = new VoxelCmd(logger, keyboards);
-            
+
             }
             return user.Pipe.Condition switch
             {
