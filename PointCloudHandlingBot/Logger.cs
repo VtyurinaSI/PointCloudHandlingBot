@@ -56,6 +56,7 @@ namespace PointCloudHandlingBot
                 return;
             var text = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss:fff}][{_user.ChatId}][{_user.UserName}][{logLevel}] : {formatter(state, exception)}\n";
             WriteToFile(text);
+            Console.Write(text);
         }
         public static void WriteToFile(string message)
         {

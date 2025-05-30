@@ -54,10 +54,12 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                 FontSize = 16,
                 MajorGridlineStyle = LineStyle.Solid,
                 MinorGridlineStyle = LineStyle.Dot,
-                Minimum = xMin,
-                Maximum = xMax,
+                Minimum = xMin - xRange * 0.05,
+                Maximum = xMax + xRange * 0.05,
                 MajorStep = step,
-                MinorStep = minor
+                MinorStep = minor,
+                MinimumPadding = 0.1,    
+                MaximumPadding = 0.1,
             };
             model.Axes.Add(xAxis);
 
@@ -69,10 +71,12 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                 FontSize = 16,
                 MajorGridlineStyle = LineStyle.Solid,
                 MinorGridlineStyle = LineStyle.Dot,
-                Minimum = yMin,
-                Maximum = yMax,
+                Minimum = yMin - yRange * 0.05,
+                Maximum = yMax + yRange * 0.05,
                 MajorStep = step,
-                MinorStep = minor
+                MinorStep = minor,
+                MinimumPadding = 0.1,    
+                MaximumPadding = 0.1,
             };
             model.Axes.Add(yAxis);
 
@@ -134,13 +138,16 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                         Text = $"Size: {cl.Size.X:0.00}x{cl.Size.Y:0.00}x{cl.Size.Z:0.00}",
                         TextPosition = new DataPoint(cl.Lims.xMin, cl.Lims.yMin),
                         FontSize = 14,
-                        TextVerticalAlignment = VerticalAlignment.Top,    // текст «над» этой точкой
+                        TextVerticalAlignment = VerticalAlignment.Top,
                         TextHorizontalAlignment = HorizontalAlignment.Left,
-                        Stroke = OxyColors.Undefined  // без рамки вокруг текста
+                        Stroke = OxyColors.Undefined,
+                        Background = OxyColor.FromAColor(a: 200, OxyColors.White),
+                        Padding = new OxyThickness(2)
                     };
                     model.Annotations.Add(label);
                 }
             }
+            //model.Padding = new OxyThickness(left: 60, top: 40, right: 60, bottom: 40);
             return model;
         }
         internal static List<OxyColor> Coloring(PclFeatures pcl, Func<float, float, float, OxyColor> ColorMap)

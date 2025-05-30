@@ -23,7 +23,9 @@ namespace PointCloudHandlingBot.Commands
                 "/DBSCANfilt" => new DBSCANfiltCmd(log),
                 "/cluster" => new ClusterCmd(log),
                 "/analyze" => new AnalyzeCmd(log),
-                "/colorMap" => new AnalyzeCmd(log),
+                "/colorMap" => new ColorMapCmd(log),
+                "/reset" => new ResetCmd(log),
+                "/start" => new StartCmd(log),
                 _ => throw new ArgumentException($"Команда {commandName} не поддерживается.")
             };
         }

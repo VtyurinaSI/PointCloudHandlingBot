@@ -14,8 +14,7 @@ namespace PointCloudHandlingBot
                     new[] {InlineKeyboardButton.WithCallbackData("DBSCAN", "/DBSCANfilt")},
                     new[] {InlineKeyboardButton.WithCallbackData("Сглаживание по Гауссу", "/gauss")},
                     new[] {InlineKeyboardButton.WithCallbackData("Поворот и перемещение", "transform")},
-                    new[] {InlineKeyboardButton.WithCallbackData("Начать расчет", "/go")},
-                    new[] {InlineKeyboardButton.WithCallbackData("Сбросить всю обработку", "/reset")}}
+                    new[] {InlineKeyboardButton.WithCallbackData("Завершить предобработку", "/reset")}}
                     );
         public static InlineKeyboardMarkup ColorMap { get; set; } = new(
             new[]
@@ -28,7 +27,7 @@ namespace PointCloudHandlingBot
 
         public static InlineKeyboardMarkup MainMenu { get; set; } = new(new[] {
                     new[] {InlineKeyboardButton.WithCallbackData("Выбрать цветовую карту", "/colorMap") },
-                    new[] {InlineKeyboardButton.WithCallbackData("Обработать изображение", "/analyze")},
+                    new[] {InlineKeyboardButton.WithCallbackData("Предобработать изображение", "/analyze")},
                     new[] {InlineKeyboardButton.WithCallbackData("Кластеризировать объекты", "/cluster")},
         });
     }

@@ -25,7 +25,7 @@ namespace PointCloudHandlingBot.Commands
             logger.LogBot($"Шум удален",
                 LogLevel.Information, user, "Готово");
             user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
-            return [new TextMsg("Воксель"),
+            return [
                 new ImageMsg(Drawing.Make3dImg),
                 new KeyboardMsg(Keyboards.Analyze)];
         }
