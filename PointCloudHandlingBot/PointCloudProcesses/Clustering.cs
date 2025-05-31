@@ -21,10 +21,12 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             {
                 var (curCluster, curPclFeatures) = GetClusterFeatures(cloud);
                 curCluster.Lims = curPclFeatures.PclLims;
-
-                clustersList.Add(curCluster);
-                colors.AddRange(curPclFeatures.Colors);
-                points.AddRange(curPclFeatures.PointCloud);
+                if (curCluster.Size.X > 0 && curCluster.Size.Y > 0 && curCluster.Size.Z > 0)
+                {
+                    clustersList.Add(curCluster);
+                    colors.AddRange(curPclFeatures.Colors);
+                    points.AddRange(curPclFeatures.PointCloud);
+                }
             }
             user.CurrentPcl.PointCloud = points;
             user.CurrentPcl.UpdLims();

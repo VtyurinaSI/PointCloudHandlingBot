@@ -46,22 +46,23 @@ namespace PointCloudHandlingBot.MsgPipeline
   const ys = [{1}];
   const zs = [{2}];
   const cs = [{3}];
-
+ const camera = {4};
   Plotly.newPlot(
     'plot',
     [{{                      
       x: xs,
-      y: ys,
-      z: zs,
+      y: zs,
+      z: ys,
       mode: 'markers',
       type: 'scatter3d',
       marker: {{ size: 3, color: cs, opacity: 1 }}
     }}],
     {{                      
       scene: {{
+        camera: camera, 
         xaxis: {{ title: 'X' }},
-        yaxis: {{ title: 'Y' }},
-        zaxis: {{ title: 'Z' }},
+        yaxis: {{ title: 'Z' }},
+        zaxis: {{ title: 'Y' }},
         aspectmode: 'data'
       }},
       margin: {{ l: 0, r: 0, b: 0, t: 0 }}
@@ -89,8 +90,11 @@ namespace PointCloudHandlingBot.MsgPipeline
             var zs = toCsv(pts.Select(p => p.Z.ToString("G", ci)));
 
             var cs = toCsv(cols.Select(c => $"\"#{c.R:X2}{c.G:X2}{c.B:X2}\""));
+            Vector3 cameraEye = new(0f, -1.5f, 0f);
+            string cameraJson =
+       $"{{ eye: {{ x:{cameraEye.X.ToString("G", ci)}, y:{cameraEye.Y.ToString("G", ci)}, z:{cameraEye.Z.ToString("G", ci)} }} }}";
 
-            return string.Format(HtmlTemplate, xs, ys, zs, cs);
+            return string.Format(HtmlTemplate, xs, ys, zs, cs, cameraJson);
         }
 
     }

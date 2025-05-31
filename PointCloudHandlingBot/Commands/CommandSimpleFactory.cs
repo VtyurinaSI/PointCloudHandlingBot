@@ -31,6 +31,8 @@ namespace PointCloudHandlingBot.Commands
                 "/delWall" => new DelWallCmd(log),
                 "/transform" => new TransformCmd(log),
                 "/cut" => new CutCmd(log),
+                "/statistical" => new StatisticalCmd(log),
+                "/median" => new MedianCmd(log),
                 _ => throw new ArgumentException($"Команда {commandName} не поддерживается.")
             };
         }
