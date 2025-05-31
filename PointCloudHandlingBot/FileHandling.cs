@@ -32,10 +32,14 @@ namespace PointCloudHandlingBot
                 if (extension == ".txt")
                 {
                     user.OrigPcl.PointCloud = pcl.ReadPointCloud_txt(lines);
+                    user.OrigPcl.UpdLims();
                     user.OrigPcl.Colors = Drawing.Coloring(user.OrigPcl, user.ColorMap);
                 }
                 else
+                {
                     (user.OrigPcl.PointCloud, user.OrigPcl.Colors) = pcl.ReadPointCloud_ply(lines);
+                    user.OrigPcl.UpdLims();
+                }
                 return "Данные загружены!";
             }
             else

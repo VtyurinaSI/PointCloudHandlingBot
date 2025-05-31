@@ -14,8 +14,8 @@ namespace PointCloudHandlingBot.PointCloudProcesses
     public class PclFeatures
     {
         private List<Vector3>? _pointCloud;
-        public List<Vector3>? PointCloud
-        {
+        public List<Vector3>? PointCloud;
+        /*{
             get => _pointCloud;
             set
             {
@@ -23,14 +23,15 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                 if (_pointCloud is not null)
                     UpdLims(_pointCloud);
             }
-        }
+        }*/
         public List<OxyColor>? Colors { get; set; }
         public PclLims PclLims { get; set; } = new();
 
-        public List<Cluster>? Clusters { get; set; } 
-        private void UpdLims(List<Vector3> pointCloud)
+        public List<Cluster>? Clusters { get; set; }
+        public void UpdLims()
         {
-            foreach (var point in pointCloud)
+            PclLims = new();
+            foreach (var point in PointCloud)
             {
                 PclLims.UpdMin(point.X, ref PclLims.xMin);
                 PclLims.UpdMax(point.X, ref PclLims.xMax);

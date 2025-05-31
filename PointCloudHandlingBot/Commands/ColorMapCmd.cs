@@ -34,9 +34,10 @@ namespace PointCloudHandlingBot.Commands
             if (user.OrigPcl != null)
             {
                 
-                user.OrigPcl.Colors = Drawing.Coloring(user.OrigPcl, user.ColorMap);
+                user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
                 return [new TextMsg("Теперь буду рисовать в новых цветах"),
                     new ImageMsg(Drawing.Make3dImg),
+                    new HtmlMsg(),
                     new KeyboardMsg(Keyboards.MainMenu)
                     ];
             }

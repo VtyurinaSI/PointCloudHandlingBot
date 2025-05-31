@@ -27,6 +27,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                 points.AddRange(curPclFeatures.PointCloud);
             }
             user.CurrentPcl.PointCloud = points;
+            user.CurrentPcl.UpdLims();
             user.CurrentPcl.Colors = colors;
             return clustersList.Count > 0 ? clustersList : null;
 
@@ -41,6 +42,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             var color = OxyPlot.OxyColor.FromRgb((byte)rand.Next(0, 255), (byte)rand.Next(0, 255), (byte)rand.Next(0, 255));
             feature.Colors = Enumerable.Repeat(color, count).ToList();
             Cluster clust = new();
+            feature.UpdLims();
             clust.Centroid = new(
                 (feature.PclLims.xMin + feature.PclLims.xMax) / 2,
                 (feature.PclLims.yMin + feature.PclLims.yMax) / 2,

@@ -56,8 +56,9 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                 Maximum = xMax + xRange * 0.05,
                 MajorStep = step,
                 MinorStep = minor,
-                MinimumPadding = 0.1,    
+                MinimumPadding = 0.1,
                 MaximumPadding = 0.1,
+                StringFormat = "0.00"
             };
             model.Axes.Add(xAxis);
 
@@ -73,8 +74,9 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                 Maximum = yMax + yRange * 0.05,
                 MajorStep = step,
                 MinorStep = minor,
-                MinimumPadding = 0.1,    
+                MinimumPadding = 0.1,
                 MaximumPadding = 0.1,
+                StringFormat = "0.00"
             };
             model.Axes.Add(yAxis);
 
@@ -112,7 +114,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                         MaximumY = cl.Lims.yMax,
                         Stroke = OxyColors.Black,
                         StrokeThickness = 1,
-                        Fill = OxyColors.Undefined   
+                        Fill = OxyColors.Undefined
                     };
                     model.Annotations.Add(rect);
 
@@ -131,7 +133,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                     var label = new TextAnnotation
                     {
                         Text = $"Size: {cl.Size.X:0.00}x{cl.Size.Y:0.00}x{cl.Size.Z:0.00}",
-                        TextPosition = new DataPoint(cl.Lims.xMin, cl.Lims.yMin-yRange*0.008),
+                        TextPosition = new DataPoint(cl.Lims.xMin, cl.Lims.yMin - yRange * 0.008),
                         FontSize = 14,
                         TextVerticalAlignment = VerticalAlignment.Top,
                         TextHorizontalAlignment = HorizontalAlignment.Left,

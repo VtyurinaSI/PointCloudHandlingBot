@@ -18,6 +18,7 @@ namespace PointCloudHandlingBot.Commands
             ResetPcl.ResetPclHandle(user);
             return [new TextMsg("Обработка сброшена, вот сырое облако точек"),
                     new ImageMsg(Drawing.Make3dImg),
+                    new HtmlMsg(),
             new KeyboardMsg(Keyboards.MainMenu)];
         }
     }

@@ -7,6 +7,7 @@ using System.Globalization;
 using System.IO;
 using System.Numerics;
 using System.Threading.Tasks;
+using Telegram.Bot.Types;
 
 namespace PointCloudHandlingBot.PointCloudProcesses
 {
@@ -44,7 +45,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
 
                     colors.Add( OxyColor.FromRgb((byte)r,(byte)g,(byte)b));
                 }
-
+                
             }
 
             return (positions, colors);

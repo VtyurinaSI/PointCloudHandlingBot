@@ -21,12 +21,14 @@ namespace PointCloudHandlingBot.Commands
 
             DBSCANfilt dbscan = new(ParseParts[0], (int)ParseParts[1], (int)ParseParts[2]);
             dbscan.Process(user.CurrentPcl);
-
+            user.CurrentPcl.UpdLims();
+            
+            user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
             logger.LogBot($"Шум удален",
                 LogLevel.Information, user, "Готово");
-            user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
             return [
                 new ImageMsg(Drawing.Make3dImg),
+                new HtmlMsg(),
                 new KeyboardMsg(Keyboards.Analyze)];
         }
     }

@@ -23,6 +23,7 @@ namespace PointCloudHandlingBot.Commands
             LogLevel.Information, user, "Ищу пол...");
 
                 user.CurrentPcl.PointCloud=RANSACPlate.RemoveFloor(user.CurrentPcl.PointCloud,distanceThreshold: (float)ParseParts[0]);
+            user.CurrentPcl.UpdLims();
             user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
 
             logger.LogBot($"Плоскость XZ удалена",
@@ -30,6 +31,7 @@ namespace PointCloudHandlingBot.Commands
             return new List<IMsgPipelineSteps>
             {
                 new ImageMsg(Drawing.Make3dImg),
+                new HtmlMsg(),
                 new KeyboardMsg(Keyboards.Analyze)
             };
         }

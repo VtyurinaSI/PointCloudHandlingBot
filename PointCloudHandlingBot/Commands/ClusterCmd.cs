@@ -24,7 +24,7 @@ namespace PointCloudHandlingBot.Commands
     {
         logger.LogBot($"Применение воксельного фильтра. Параметры: {string.Join(" ", ParseParts)}",
             LogLevel.Information, user, "Делаю кластеризацию...");
-
+            user.CurrentPcl.Clusters = null;
             Clustering cl = new();
             user.CurrentPcl.Clusters = cl.ClusteObjects( user, ParseParts[0], (int)ParseParts[1], (int)ParseParts[2]);
         
@@ -34,6 +34,7 @@ namespace PointCloudHandlingBot.Commands
             LogLevel.Information, user, "Готово");
         return [
                 new ImageMsg(Drawing.Make3dImg),
+                new HtmlMsg(),
                 new KeyboardMsg(Keyboards.MainMenu)
                 ];
     }

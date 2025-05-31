@@ -13,6 +13,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
         {
             user.CurrentPcl = new();
             user.CurrentPcl.PointCloud = [.. user.OrigPcl.PointCloud.Select(vect => new Vector3(vect.X, vect.Y, vect.Z))];
+            user.CurrentPcl.UpdLims();
             user.CurrentPcl.Colors = [.. user.OrigPcl.Colors];
         }
     }

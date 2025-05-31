@@ -1,26 +1,17 @@
-﻿using Microsoft.Extensions.Logging;
-using PointCloudHandlingBot.MsgPipeline;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Telegram.Bot.Types.ReplyMarkups;
+﻿using PointCloudHandlingBot.MsgPipeline;
 
 namespace PointCloudHandlingBot.Commands
 {
     public abstract class CommandBase
     {
-        public CommandBase(string name, Logger logger, 
+        public CommandBase(string name, Logger logger,
             int parsePartsNum, List<string>? paramsDescriptions = null)
         {
             this.logger = logger;
             CommandName = name;
             ParsePartsNum = parsePartsNum;
             ParamsDescriptions = paramsDescriptions;
-
         }
-
 
         private protected Logger logger;
         public int ParsePartsNum { get; set; }
@@ -28,8 +19,8 @@ namespace PointCloudHandlingBot.Commands
         private protected List<double> ParseParts { get; set; } = [];
         private protected List<string>? ParamsDescriptions { get; set; }
         public bool IsInited => ParseParts.Count == ParsePartsNum;
-        public string? FirstParName => ParamsDescriptions==null?null:ParamsDescriptions[0];
-        public string SetParseParts(string textMsg)
+        public string? FirstParName => ParamsDescriptions == null ? null : ParamsDescriptions[0];
+        public virtual string SetParseParts(string textMsg)
         {
             if (double.TryParse(textMsg.Trim().Replace('.', ','), out double result))
             {
@@ -38,7 +29,6 @@ namespace PointCloudHandlingBot.Commands
             }
             else
                 return "Неверный формат параметра. Пожалуйста, введи число";
-
         }
 
         public abstract List<IMsgPipelineSteps> Process(User user);

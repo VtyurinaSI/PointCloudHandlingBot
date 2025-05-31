@@ -117,13 +117,13 @@ namespace PointCloudHandlingBot
                 new TextMsg("Ошибка в имени документа"),
                 new KeyboardMsg(Keyboards.MainMenu)
             };
-            OnHandleUpdateStarted?.Invoke(user, $"Received file \"{doc.FileName}\"");
             var reply = await file.ReadFile(bot, user, doc);
             ResetPcl.ResetPclHandle(user);
             return new List<IMsgPipelineSteps>
             {
                 new TextMsg(reply),
                 new ImageMsg(Drawing.Make3dImg),
+                new HtmlMsg(),
                 new KeyboardMsg(Keyboards.MainMenu)
             };
         }

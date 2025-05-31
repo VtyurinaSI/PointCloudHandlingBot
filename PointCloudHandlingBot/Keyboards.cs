@@ -14,6 +14,7 @@ namespace PointCloudHandlingBot
                     new[] {InlineKeyboardButton.WithCallbackData("DBSCAN", "/DBSCANfilt")},
                     new[] {InlineKeyboardButton.WithCallbackData("Сглаживание по Гауссу", "/gauss")},
                     new[] {InlineKeyboardButton.WithCallbackData("Поворот и перемещение", "/transform")},
+                    new[] {InlineKeyboardButton.WithCallbackData("Обрезать", "/cut")},
                     new[] {InlineKeyboardButton.WithCallbackData("Удалить пол", "/delFloor")},
                     new[] {InlineKeyboardButton.WithCallbackData("Удалить заднюю стену", "/delWall")},
                     new[] {InlineKeyboardButton.WithCallbackData("Завершить предобработку", "/stopFilter") },

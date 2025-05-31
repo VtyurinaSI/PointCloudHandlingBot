@@ -27,9 +27,11 @@ namespace PointCloudHandlingBot.Commands
 
             logger.LogBot($"Воксельный фильтр применен",
                 LogLevel.Information, user, "Готово");
+            user.CurrentPcl.UpdLims(); 
             user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
             return [new TextMsg("Воксель"),
                 new ImageMsg(Drawing.Make3dImg),
+                new HtmlMsg(),
                 new KeyboardMsg(Keyboards.Analyze)];
         }
 
