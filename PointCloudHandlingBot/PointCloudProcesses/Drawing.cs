@@ -23,9 +23,9 @@ namespace PointCloudHandlingBot.PointCloudProcesses
 {
     public static class Drawing
     {
-        public static PlotModel Make3dImg(User user)
+        public static (PngExporter, PlotModel) Make3dImg(User user)
         {
-            var pcl = user.CurrentPcl is null ? user.OrigPcl : user.CurrentPcl;
+            var pcl = user.CurrentPcl;
 
             var lims = pcl.PclLims;
             double xMin = lims.xMin, xMax = lims.xMax;
@@ -39,7 +39,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
             double minor = step / 5;
             var model = new PlotModel
             {
-                Title = "Проекция облака точек",
+                Title = user.FileName,
                 TitleFontSize = 24,
                 SubtitleFontSize = 0,
                 TextColor = OxyColors.Black
@@ -144,7 +144,24 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                     model.Annotations.Add(label);
                 }
             }
-            return model;
+
+            double h = user.CurrentPcl.PclLims.yMax - user.CurrentPcl.PclLims.yMin;
+            double w = user.CurrentPcl.PclLims.xMax - user.CurrentPcl.PclLims.xMin;
+            int hImage = 0, wImage = 0;
+            if (w > h)
+            {
+                wImage = 900;
+                double koeff = h / w * 1.1;
+                hImage = (int)(wImage * koeff);
+            }
+            else
+            {
+                hImage = 900;
+                double koeff = w / h * 1.1;
+                wImage = (int)(hImage / koeff);
+            }
+            var exporter = new PngExporter() { Height = hImage, Width = wImage };
+            return (exporter, model);
         }
         internal static List<OxyColor> Coloring(PclFeatures pcl, Func<float, float, float, OxyColor> ColorMap)
         {

@@ -18,10 +18,10 @@ namespace PointCloudHandlingBot
             text = new();
             this.bot = bot;
             file = new();
-             
+
         }
-        LoggerProvider lp ;
-        Logger logger ;
+        LoggerProvider lp;
+        Logger logger;
         ITelegramBotClient bot;
         private readonly FileHandling file;
 
@@ -40,7 +40,7 @@ namespace PointCloudHandlingBot
             var user = GetUserFromUpdate(update);
             if (user is null)
                 return;
-            
+
             List<IMsgPipelineSteps> message = [];
             switch (update.Type)
             {
@@ -95,7 +95,7 @@ namespace PointCloudHandlingBot
             logger = (Logger)lp.CreateLogger("logs");
             if (textMsg is not null)
             {
-                
+
                 return text.WhatDoYouWant(user, textMsg, (Logger)logger);
             }
             if (message.Document is not null)
@@ -117,6 +117,7 @@ namespace PointCloudHandlingBot
                 new TextMsg("Ошибка в имени документа"),
                 new KeyboardMsg(Keyboards.MainMenu)
             };
+            user.FileName = doc.FileName;
             var reply = await file.ReadFile(bot, user, doc);
             ResetPcl.ResetPclHandle(user);
             return new List<IMsgPipelineSteps>

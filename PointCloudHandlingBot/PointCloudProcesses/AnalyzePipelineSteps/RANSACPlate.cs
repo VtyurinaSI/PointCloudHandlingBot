@@ -14,7 +14,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
             public Vector3 Normal;
             public float D;
         }
-        public static List<Vector3> RemoveFloor(
+        public static List<Vector3> RemoveWall(
         List<Vector3> cloud,
         int maxIterations = 1000,
         float distanceThreshold = 0.02f,
@@ -32,7 +32,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
         /// <summary>
         /// Убирает стену (вертикальную плоскость).
         /// </summary>
-        public static List<Vector3> RemoveWall(
+        public static List<Vector3> RemoveFloor(
             List<Vector3> cloud,
             int maxIterations = 1000,
             float distanceThreshold = 0.02f,

@@ -16,20 +16,21 @@ namespace PointCloudHandlingBot
         public User(long chatId, string userName = "noname")
         {
             ChatId = chatId;
-            UserName = userName ;
+            UserName = userName;
         }
         public long ChatId { get; set; }
         public string UserName { get; set; } = null!;
 
         public Func<float, float, float, OxyColor> ColorMap = Drawing.MapSpring;
 
+        public string FileName { get; set; } = null!;
         public PclFeatures OrigPcl { get; set; } = new();
 
-        public PclFeatures? CurrentPcl { get;  set; }
+        public PclFeatures? CurrentPcl { get; set; }
 
         public AnalyzePipeLine Pipe { get; set; } = new();
 
-        public CommandBase? Command { get; set; } 
+        public CommandBase? Command { get; set; }
 
     }
 }
