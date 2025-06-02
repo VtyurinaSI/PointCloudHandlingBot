@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 
 namespace PointCloudHandlingBot
 {
-    public class User
+    public class UserData
     {
-        public User(long chatId, string userName = "noname")
+        public UserData(long chatId, string userName = "noname")
         {
             ChatId = chatId;
             UserName = userName;

@@ -13,7 +13,7 @@ namespace PointCloudHandlingBot.Commands
         public ResetCmd(Logger logger) : base("/reset", logger, 0)
         {
         }
-        public override List<IMsgPipelineSteps> Process(User user)
+        public override List<IMsgPipelineSteps> Process(UserData user)
         {
             ResetPcl.ResetPclHandle(user);
             return [new TextMsg("Обработка сброшена, вот сырое облако точек"),

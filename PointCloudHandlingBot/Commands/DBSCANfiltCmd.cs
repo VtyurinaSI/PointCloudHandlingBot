@@ -14,7 +14,7 @@ namespace PointCloudHandlingBot.Commands
         internal DBSCANfiltCmd(Logger logger)
             : base("/DBSCANfilt", logger, 3, paramsDescriptions) { }
 
-        public override List<IMsgPipelineSteps> Process(User user)
+        public override List<IMsgPipelineSteps> Process(UserData user)
         {
             logger.LogBot($"Применение воксельного фильтра. Параметры: {string.Join(" ", ParseParts)}",
                 LogLevel.Information, user, "Удаляю шум...");

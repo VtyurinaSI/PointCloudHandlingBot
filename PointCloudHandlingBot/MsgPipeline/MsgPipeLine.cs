@@ -11,7 +11,7 @@ namespace PointCloudHandlingBot.MsgPipeline
     public static class MsgPipeLine
     {        
 
-        public static async Task SendAll(ITelegramBotClient bot,User user,params IMsgPipelineSteps[] _steps)
+        public static async Task SendAll(ITelegramBotClient bot,UserData user,params IMsgPipelineSteps[] _steps)
         {
             foreach (var step in _steps) await step.Send(bot,user);
 

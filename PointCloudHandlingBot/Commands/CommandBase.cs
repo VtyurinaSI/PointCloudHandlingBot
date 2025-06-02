@@ -31,6 +31,6 @@ namespace PointCloudHandlingBot.Commands
                 return "Неверный формат параметра. Пожалуйста, введи число";
         }
 
-        public abstract List<IMsgPipelineSteps> Process(User user);
+        public abstract List<IMsgPipelineSteps> Process(UserData user);
     }
 }

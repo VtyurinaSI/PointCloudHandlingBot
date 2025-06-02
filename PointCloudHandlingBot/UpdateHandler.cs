@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Dapper;
+using Microsoft.Extensions.Logging;
+using Npgsql;
+using PointCloudHandlingBot.Configurate;
 using PointCloudHandlingBot.MsgPipeline;
 using PointCloudHandlingBot.PointCloudProcesses;
 using System.Threading.Tasks;
@@ -18,15 +21,17 @@ namespace PointCloudHandlingBot
             text = new();
             this.bot = bot;
             file = new();
-
+            db = new NpgsqlConnection(DBConnection.SqlConnectionString);
         }
+        private readonly System.Data.IDbConnection db;
+
         LoggerProvider lp;
         Logger logger;
         ITelegramBotClient bot;
         private readonly FileHandling file;
 
 
-        public delegate Task MessageHandler(User user, string msg);
+        public delegate Task MessageHandler(UserData user, string msg);
         public event MessageHandler? OnHandleUpdateCompleted;
 
         public event MessageHandler? OnHandleUpdateStarted;
@@ -40,6 +45,11 @@ namespace PointCloudHandlingBot
             var user = GetUserFromUpdate(update);
             if (user is null)
                 return;
+            db.Execute("""
+        INSERT INTO Users (UserChatID, UserName)
+        VALUES (@UserChatID, @UserName)
+        ON CONFLICT (UserChatID) DO NOTHING;
+    """, new DataBaseTables.User() { UserChatID = user.ChatId, UserName = user.UserName });
 
             List<IMsgPipelineSteps> message = [];
             switch (update.Type)
@@ -58,7 +68,7 @@ namespace PointCloudHandlingBot
                 await msg.Send(bot, user);
         }
 
-        private User? GetUserFromUpdate(Update update)
+        private UserData? GetUserFromUpdate(Update update)
         {
             switch (update.Type)
             {
@@ -66,20 +76,20 @@ namespace PointCloudHandlingBot
                     {
                         var chatId = update.CallbackQuery.Message.Chat.Id;
                         var userName = update.CallbackQuery.Message.Chat.Username ?? "noname";
-                        return botUsers.GetOrAdd(chatId, id => new User(chatId, userName));
+                        return botUsers.GetOrAdd(chatId, id => new UserData(chatId, userName));
                     }
                 case UpdateType.Message when update.Message != null:
                     {
                         var chatId = update.Message.Chat.Id;
                         var userName = update.Message.Chat.Username ?? "noname";
-                        return botUsers.GetOrAdd(chatId, id => new User(chatId, userName));
+                        return botUsers.GetOrAdd(chatId, id => new UserData(chatId, userName));
                     }
                 default:
                     return null;
             }
         }
 
-        private List<IMsgPipelineSteps> HandleCallbackQuery(CallbackQuery callbackQuery, User user)
+        private List<IMsgPipelineSteps> HandleCallbackQuery(CallbackQuery callbackQuery, UserData user)
         {
             var textMsg = callbackQuery.Data;
             OnHandleUpdateStarted?.Invoke(user, textMsg);
@@ -88,7 +98,7 @@ namespace PointCloudHandlingBot
             return text.WhatDoYouWant(user, textMsg, (Logger)logger);
         }
 
-        private async Task<List<IMsgPipelineSteps>> HandleMessageAsync(Message message, User user)
+        private async Task<List<IMsgPipelineSteps>> HandleMessageAsync(Message message, UserData user)
         {
             var textMsg = message.Text;
             lp = new(bot, user.ChatId);
@@ -110,7 +120,7 @@ namespace PointCloudHandlingBot
             };
         }
 
-        private async Task<List<IMsgPipelineSteps>> HandleDocumentAsync(User user, Document doc)
+        private async Task<List<IMsgPipelineSteps>> HandleDocumentAsync(UserData user, Document doc)
         {
             if (doc.FileName is null) return new List<IMsgPipelineSteps>
             {

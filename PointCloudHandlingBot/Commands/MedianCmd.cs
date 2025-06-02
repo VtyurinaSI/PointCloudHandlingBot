@@ -19,7 +19,7 @@ namespace PointCloudHandlingBot.Commands
         {
         }
 
-        public override List<IMsgPipelineSteps> Process(User user)
+        public override List<IMsgPipelineSteps> Process(UserData user)
         {
             logger.LogBot($"Применение медианного фильтра. Параметры: {string.Join(" ", ParseParts)}",
             LogLevel.Information, user, "Считаю...");

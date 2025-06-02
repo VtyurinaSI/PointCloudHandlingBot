@@ -10,7 +10,7 @@ namespace PointCloudHandlingBot
 
     class TextMessageHandling
     {
-        public List<IMsgPipelineSteps> WhatDoYouWant(User user, string textMsg, Logger logger)
+        public List<IMsgPipelineSteps> WhatDoYouWant(UserData user, string textMsg, Logger logger)
         {
             List<IMsgPipelineSteps> res = [];
             textMsg = textMsg.Trim();

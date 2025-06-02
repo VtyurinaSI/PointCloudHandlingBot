@@ -14,7 +14,7 @@ namespace PointCloudHandlingBot.MsgPipeline
             message = msg;
         }
         private readonly string message;
-        public async Task Send(ITelegramBotClient bot,User user)
+        public async Task Send(ITelegramBotClient bot,UserData user)
         {
             await bot.SendMessage(user.ChatId, message);
         }

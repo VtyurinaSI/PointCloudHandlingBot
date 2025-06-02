@@ -8,7 +8,7 @@ namespace PointCloudHandlingBot.Commands
         {
         }
 
-        public override List<IMsgPipelineSteps> Process(User user)
+        public override List<IMsgPipelineSteps> Process(UserData user)
         {
             user.CurrentPcl.Clusters = null;
             return [new KeyboardMsg(Keyboards.Analyze)];

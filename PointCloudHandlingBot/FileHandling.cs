@@ -11,7 +11,7 @@ namespace PointCloudHandlingBot
         public delegate Task PclProcessMessage(long id, string msg);
         public event PclProcessMessage? PclProcessMessageEvent;
 
-        public async Task<string> ReadFile(ITelegramBotClient bot, User user, Document doc)
+        public async Task<string> ReadFile(ITelegramBotClient bot, UserData user, Document doc)
         {
             string extension = Path.GetExtension(doc.FileName).ToLowerInvariant();
             if (extension == ".txt" || extension == ".ply")

@@ -17,7 +17,7 @@ namespace PointCloudHandlingBot.Commands
         {
         }
 
-        public override List<IMsgPipelineSteps> Process(User user)
+        public override List<IMsgPipelineSteps> Process(UserData user)
         {
             logger.LogBot($"Удаляю плоскость XY. Параметры: {string.Join(" ", ParseParts)}",
             LogLevel.Information, user, "Ищу стену...");

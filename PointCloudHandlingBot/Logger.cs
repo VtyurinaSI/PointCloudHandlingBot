@@ -17,7 +17,7 @@ namespace PointCloudHandlingBot
         private readonly ITelegramBotClient _botClient;
         private readonly string _category;
         private readonly LogLevel _minLevel;
-        private  User _user;
+        private  UserData _user;
 
         public Logger(
             ITelegramBotClient botClient,
@@ -33,7 +33,7 @@ namespace PointCloudHandlingBot
 
         /// <summary>Должны ли логи этого уровня обрабатываться</summary>
         public bool IsEnabled(LogLevel logLevel) => logLevel >= _minLevel;
-        public void LogBot(string consoleMessage, LogLevel logLevel,  User _user,string? botMessage = null)
+        public void LogBot(string consoleMessage, LogLevel logLevel,  UserData _user,string? botMessage = null)
         {
             this._user = _user;
             Log(

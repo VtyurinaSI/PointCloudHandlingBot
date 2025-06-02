@@ -16,7 +16,7 @@ namespace PointCloudHandlingBot.Commands
             ["Сколько ближайших соседей смотреть (8–16 нормально для обычного облака)?",
             "Множитель стандартного отклонения. Чем больше, тем меньше фильтрация (оставляет больше точек). Обычно 1.0–2.0"])
         {}
-        public override List<IMsgPipelineSteps> Process(User user)
+        public override List<IMsgPipelineSteps> Process(UserData user)
         {
             logger.LogBot($"Применение Statistical Outlier Removal. Параметры: {string.Join(" ", ParseParts)}",
             LogLevel.Information, user, "Считаю...");

@@ -9,7 +9,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
 {
     internal class ResetPcl
     {
-        internal static void ResetPclHandle(User user)
+        internal static void ResetPclHandle(UserData user)
         {
             user.CurrentPcl = new();
             user.CurrentPcl.PointCloud = [.. user.OrigPcl.PointCloud.Select(vect => new Vector3(vect.X, vect.Y, vect.Z))];

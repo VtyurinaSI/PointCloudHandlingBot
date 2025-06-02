@@ -1,5 +1,8 @@
 ﻿using Microsoft.VisualBasic;
+using Npgsql;
+using PointCloudHandlingBot.Configurate;
 using System.Collections.Concurrent;
+using System.Data;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
@@ -8,7 +11,7 @@ namespace PointCloudHandlingBot
 {
     internal class Program
     {
-        public static ConcurrentDictionary<long, User> botUsers = new();
+        public static ConcurrentDictionary<long, UserData> botUsers = new();
 
         public static TelegramBotClient botClient = new TelegramBotClient(BotToken.token);
         static async Task Main(string[] args)
@@ -20,7 +23,7 @@ namespace PointCloudHandlingBot
             var me = await botClient.GetMe(cts.Token);
 
             Console.WriteLine($"{me.FirstName} запущен!");
-
+            
             var receiverOptions = new ReceiverOptions
             {
                 AllowedUpdates = new[] { UpdateType.CallbackQuery, UpdateType.Message },

@@ -9,7 +9,7 @@ namespace PointCloudHandlingBot.Commands
         {
         }
 
-        public override List<IMsgPipelineSteps> Process(User user)
+        public override List<IMsgPipelineSteps> Process(UserData user)
         {
             return new List<IMsgPipelineSteps>
             {

@@ -23,7 +23,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
 {
     public static class Drawing
     {
-        public static (PngExporter, PlotModel) Make3dImg(User user)
+        public static (PngExporter, PlotModel) Make3dImg(UserData user)
         {
             var pcl = user.CurrentPcl;
 

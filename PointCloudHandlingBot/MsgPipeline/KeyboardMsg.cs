@@ -16,7 +16,7 @@ namespace PointCloudHandlingBot.MsgPipeline
             keyboardMarkup = kb;
         }
         private readonly InlineKeyboardMarkup keyboardMarkup;
-        public async Task Send(ITelegramBotClient bot, User user)
+        public async Task Send(ITelegramBotClient bot, UserData user)
         {
             await bot.SendMessage(
                     chatId: user.ChatId,

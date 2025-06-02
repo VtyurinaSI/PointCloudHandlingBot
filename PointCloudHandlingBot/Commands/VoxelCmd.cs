@@ -17,7 +17,7 @@ namespace PointCloudHandlingBot.Commands
         internal VoxelCmd(Logger logger)
             : base("/voxel", logger,1, [.. Enumerable.Repeat("Param", 1)]) { }
 
-        public override List<IMsgPipelineSteps> Process(User user)
+        public override List<IMsgPipelineSteps> Process(UserData user)
         {
             logger.LogBot($"Применение воксельного фильтра. Параметры: {string.Join(" ", ParseParts)}",
                 LogLevel.Information, user, "Применяю воксельный фильтр...");

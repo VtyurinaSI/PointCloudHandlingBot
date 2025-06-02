@@ -15,7 +15,7 @@ namespace PointCloudHandlingBot.MsgPipeline
 {
     internal class HtmlMsg : IMsgPipelineSteps
     {
-        public async Task Send(ITelegramBotClient bot, User user)
+        public async Task Send(ITelegramBotClient bot, UserData user)
         {
             var html = GenerateHtml(user.CurrentPcl.PointCloud, user.CurrentPcl.Colors);
 

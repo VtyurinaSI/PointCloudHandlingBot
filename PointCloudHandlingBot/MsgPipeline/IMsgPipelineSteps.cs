@@ -10,7 +10,7 @@ namespace PointCloudHandlingBot.MsgPipeline
 {
     public interface IMsgPipelineSteps
     {
-        public Task Send(ITelegramBotClient bot, User user);
+        public Task Send(ITelegramBotClient bot, UserData user);
 
     }
 }

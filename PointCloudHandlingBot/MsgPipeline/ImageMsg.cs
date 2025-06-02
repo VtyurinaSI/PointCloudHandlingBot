@@ -14,12 +14,12 @@ namespace PointCloudHandlingBot.MsgPipeline
 {
     internal class ImageMsg : IMsgPipelineSteps
     {
-        public ImageMsg(Func<User, (PngExporter, PlotModel)> setImg)
+        public ImageMsg(Func<UserData, (PngExporter, PlotModel)> setImg)
         {
             makeExporter = setImg;
         }
-        private readonly Func<User, (PngExporter, PlotModel)> makeExporter;
-        public async Task Send(ITelegramBotClient bot, User user)
+        private readonly Func<UserData, (PngExporter, PlotModel)> makeExporter;
+        public async Task Send(ITelegramBotClient bot, UserData user)
         {
             using var ms = new MemoryStream();
             var (exporter, model) = makeExporter(user);

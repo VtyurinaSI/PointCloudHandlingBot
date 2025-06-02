@@ -11,7 +11,7 @@ namespace PointCloudHandlingBot.PointCloudProcesses
 {
     internal class Clustering
     {
-        public List<Cluster>? ClusteObjects(User user, double eps, int minPts, int minClustVol)
+        public List<Cluster>? ClusteObjects(UserData user, double eps, int minPts, int minClustVol)
         {
             List<Cluster> clustersList = new();
             List<OxyColor> colors = [];

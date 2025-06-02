@@ -14,7 +14,7 @@ namespace PointCloudHandlingBot.Commands
                   ["Введи неравнствами интересующую тебя область через ';'"])
         { }
 
-        public override List<IMsgPipelineSteps> Process(User user)
+        public override List<IMsgPipelineSteps> Process(UserData user)
         {
             logger.LogBot($"Обрезка облака точек. Условия: {string.Join(';', conds)}",
                 LogLevel.Information, user, "Попробую");
