@@ -11,7 +11,7 @@ namespace PointCloudHandlingBot
         public delegate Task PclProcessMessage(long id, string msg);
         public event PclProcessMessage? PclProcessMessageEvent;
 
-        public async Task<string> ReadFile(ITelegramBotClient bot, UserData user, Document doc)
+        public async Task<(string, string)> ReadFile(ITelegramBotClient bot, UserData user, Document doc)
         {
             string extension = Path.GetExtension(doc.FileName).ToLowerInvariant();
             if (extension == ".txt" || extension == ".ply")
@@ -40,11 +40,10 @@ namespace PointCloudHandlingBot
                     (user.OrigPcl.PointCloud, user.OrigPcl.Colors) = pcl.ReadPointCloud_ply(lines);
                     user.OrigPcl.UpdLims();
                 }
-                return "Данные загружены!";
+                return ("Данные загружены!", extension);
             }
             else
-                return "Я не умею работать с такими файлами Т_Т";
-
+                throw new InvalidDataException();
         }
     }
 }

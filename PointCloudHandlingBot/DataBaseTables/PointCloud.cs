@@ -11,14 +11,18 @@ namespace PointCloudHandlingBot.DataBaseTables
         /// <summary>
         /// PRIMARY KEY
         /// </summary>
-        public int PointCloudID { get; set; } 
-       /// <summary>
-       /// FOREIGN KEY на User
-       /// </summary>
-        public long UserChatID { get; set; }            
+        public int PointCloudID { get; set; }
+        /// <summary>
+        /// FOREIGN KEY на User
+        /// </summary>
+        public long UserChatID { get; set; }
         public string OriginalFileName { get; set; }
         public string TelegramFileID { get; set; }
         public DateTime UploadTimestamp { get; set; }
+        public string FileType { get; set; }
+        public int InitialPointCount { get; set; }
+
+
     }
 }
 

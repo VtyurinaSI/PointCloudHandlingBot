@@ -12,56 +12,63 @@ namespace PointCloudHandlingBot
     {
         public List<IMsgPipelineSteps> WhatDoYouWant(UserData user, string textMsg, Logger logger)
         {
-            List<IMsgPipelineSteps> res = [];
             textMsg = textMsg.Trim();
+
             if (user.Command is not null)
+                return HandleActiveCommand(user, textMsg, logger);
+
+            return HandleNewCommand(user, textMsg, logger);
+        }
+
+        private List<IMsgPipelineSteps> HandleActiveCommand(UserData user, string textMsg, Logger logger)
+        {
+            if (!user.Command.IsInited)
             {
-                if (!user.Command.IsInited)
+                string paramResult = user.Command.SetParseParts(textMsg);
+                logger.LogBot("Ожидание параметра", LogLevel.Information, user, paramResult);
+
+                if (user.Command.IsInited)
                 {
-                    logger.LogBot("Ожидание параметра", LogLevel.Information, user,
-                        user.Command.SetParseParts(textMsg));
-                    if (user.Command.IsInited)
-                    {
-                        res = user.Command.Process(user);
-                        user.Command = null;
-                        return res;
-                    }
+                    var res = user.Command.Process(user);
+                    user.Command = null;
+                    return res;
                 }
+            }
+            return [];
+        }
+
+        private List<IMsgPipelineSteps> HandleNewCommand(UserData user, string textMsg, Logger logger)
+        {
+            try
+            {
+                user.Command = CommandSimpleFactory.CreateCommand(textMsg, logger);
+            }
+            catch (ArgumentException ex)
+            {
+                logger.LogBot($"Ошибка создания команды: {ex.Message}", LogLevel.Error, user, textMsg);
+                return [new TextMsg("че :/")];
+            }
+
+            if (user.Command.ParsePartsNum == 0)
+            {
+                var res = user.Command.Process(user);
+                user.Command = null;
+                return res;
+            }
+
+            if (textMsg != "/colorMap")
+            {
+                string? firstParDesc = user.Command.FirstParName;
+                logger.LogBot($"Создана команда \"{textMsg}\". Ожидание параметра", LogLevel.Information, user, firstParDesc);
+                return [];
             }
             else
             {
-                try
-                {
-                    user.Command = CommandSimpleFactory.CreateCommand(textMsg, logger);
-                    if (user.Command.ParsePartsNum == 0)
-                    {
-                        res = user.Command.Process(user);
-                        user.Command = null;
-                        return res;
-                    }
-                }
-                catch (ArgumentException ex)
-                {
-                    logger.LogBot($"Ошибка создания команды: {ex.Message}", LogLevel.Error, user, textMsg);
-                    res = [new TextMsg("че :/")];
-                    return res;
-                }
-                if (textMsg != "/colorMap")
-                {
-                    string? firstParDesc = user.Command.FirstParName;
-                    logger.LogBot($"Создана команда \"{textMsg}\". Ожидание параметра", LogLevel.Information, user,
-                        firstParDesc);
-                }
-                else
-                    res = [
-                            new ImageMsg(Drawing.Make3dImg),
-                            new KeyboardMsg(Keyboards.ColorMap)
-                        ];
-                return res;
-
+                return [
+                    new ImageMsg(Drawing.Make3dImg),
+                    new KeyboardMsg(Keyboards.ColorMap)
+                ];
             }
-            return res;
-
         }
     }
 }

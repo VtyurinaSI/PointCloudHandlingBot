@@ -28,8 +28,6 @@ namespace PointCloudHandlingBot
 
         public PclFeatures? CurrentPcl { get; set; }
 
-        public AnalyzePipeLine Pipe { get; set; } = new();
-
         public CommandBase? Command { get; set; }
 
     }

@@ -5,7 +5,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PointCloudHandlingBot.PointCloudProcesses.AnalyzePipelineSteps
+namespace PointCloudHandlingBot.PointCloudProcesses
 {
     public static class RANSACPlate
     {

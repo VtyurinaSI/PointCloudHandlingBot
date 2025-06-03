@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using PointCloudHandlingBot.Configurate;
+using PointCloudHandlingBot.DataBaseTables;
 using PointCloudHandlingBot.MsgPipeline;
 using PointCloudHandlingBot.PointCloudProcesses;
 using System.Threading.Tasks;
@@ -22,6 +23,8 @@ namespace PointCloudHandlingBot
             this.bot = bot;
             file = new();
             db = new NpgsqlConnection(DBConnection.SqlConnectionString);
+            lp = new(bot);
+            logger = (Logger)lp.CreateLogger("logs");
         }
         private readonly System.Data.IDbConnection db;
 
@@ -37,7 +40,7 @@ namespace PointCloudHandlingBot
         public event MessageHandler? OnHandleUpdateStarted;
         public async Task HandleErrorAsync(ITelegramBotClient bot, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
         {
-            await Task.Run(() => Console.WriteLine($"Ошибка: {exception.Message}\n{exception.StackTrace}"), cancellationToken);
+            await Task.Run(() => logger.LogBot($"{exception.Message}", LogLevel.Error, new(0000) { UserName = "bot" }));
         }
         private TextMessageHandling text;
         public async Task HandleUpdateAsync(ITelegramBotClient bot, Update update, CancellationToken token)
@@ -46,7 +49,7 @@ namespace PointCloudHandlingBot
             if (user is null)
                 return;
             db.Execute("""
-        INSERT INTO Users (UserChatID, UserName)
+        INSERT INTO Userst (UserChatID, UserName)
         VALUES (@UserChatID, @UserName)
         ON CONFLICT (UserChatID) DO NOTHING;
     """, new DataBaseTables.User() { UserChatID = user.ChatId, UserName = user.UserName });
@@ -93,16 +96,13 @@ namespace PointCloudHandlingBot
         {
             var textMsg = callbackQuery.Data;
             OnHandleUpdateStarted?.Invoke(user, textMsg);
-            lp = new(bot, user.ChatId);
-            logger = (Logger)lp.CreateLogger("logs");
+            lp = new(bot);
             return text.WhatDoYouWant(user, textMsg, (Logger)logger);
         }
 
         private async Task<List<IMsgPipelineSteps>> HandleMessageAsync(Message message, UserData user)
         {
             var textMsg = message.Text;
-            lp = new(bot, user.ChatId);
-            logger = (Logger)lp.CreateLogger("logs");
             if (textMsg is not null)
             {
 
@@ -122,13 +122,28 @@ namespace PointCloudHandlingBot
 
         private async Task<List<IMsgPipelineSteps>> HandleDocumentAsync(UserData user, Document doc)
         {
+            user.CurrentPcl = null;
             if (doc.FileName is null) return new List<IMsgPipelineSteps>
             {
                 new TextMsg("Ошибка в имени документа"),
                 new KeyboardMsg(Keyboards.MainMenu)
             };
             user.FileName = doc.FileName;
-            var reply = await file.ReadFile(bot, user, doc);
+            var (reply, extention) = await file.ReadFile(bot, user, doc);
+            var pcl = new DataBaseTables.PointCloud()
+            {
+                UserChatID = user.ChatId,
+                OriginalFileName = user.FileName,
+                TelegramFileID = doc.FileId,
+                UploadTimestamp = DateTime.Now,
+                FileType = extention,
+                InitialPointCount = user.OrigPcl.PointCloud.Count
+            };
+            db.Execute("""
+        INSERT INTO pointclouds (UserChatID, OriginalFileName,TelegramFileID,UploadTimestamp,FileType,InitialPointCount)
+        VALUES (@UserChatID, @OriginalFileName,@TelegramFileID,@UploadTimestamp,@FileType,@InitialPointCount);
+    """, pcl);
+            logger.LogBot($"Полуен файл {user.FileName}", LogLevel.Information, user);
             ResetPcl.ResetPclHandle(user);
             return new List<IMsgPipelineSteps>
             {

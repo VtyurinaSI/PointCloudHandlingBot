@@ -3,21 +3,6 @@ using OxyPlot.Annotations;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using OxyPlot.SkiaSharp;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.ColorSpaces;
-using SixLabors.ImageSharp.ColorSpaces.Conversion;
-using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using Telegram.Bot.Types;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace PointCloudHandlingBot.PointCloudProcesses
 {
@@ -26,24 +11,44 @@ namespace PointCloudHandlingBot.PointCloudProcesses
         public static (PngExporter, PlotModel) Make3dImg(UserData user)
         {
             var pcl = user.CurrentPcl;
-
             var lims = pcl.PclLims;
-            double xMin = lims.xMin, xMax = lims.xMax;
-            double yMin = lims.yMin, yMax = lims.yMax;
 
-            double xRange = xMax - xMin;
-            double yRange = yMax - yMin;
+            var model = CreatePlotModel(user.FileName);
+            AddAxes(model, lims);
+            AddColorAxis(model, pcl.Colors);
 
-            int N = 10;
-            double step = Math.Max(xRange, yRange) / N;
-            double minor = step / 5;
-            var model = new PlotModel
+            AddScatterSeries(model, pcl);
+
+            if (pcl.Clusters is not null)
+                AddClustersAnnotations(model, pcl.Clusters, lims);
+
+            var (hImage, wImage) = CalculateImageSize(lims);
+
+            var exporter = new PngExporter() { Height = hImage, Width = wImage };
+            return (exporter, model);
+        }
+
+        private static PlotModel CreatePlotModel(string title)
+        {
+            return new PlotModel
             {
-                Title = user.FileName,
+                Title = title,
                 TitleFontSize = 24,
                 SubtitleFontSize = 0,
                 TextColor = OxyColors.Black
             };
+        }
+
+        private static void AddAxes(PlotModel model, PclLims lims)
+        {
+            double xMin = lims.xMin, xMax = lims.xMax;
+            double yMin = lims.yMin, yMax = lims.yMax;
+            double xRange = xMax - xMin;
+            double yRange = yMax - yMin;
+            int N = 10;
+            double step = Math.Max(xRange, yRange) / N;
+            double minor = step / 5;
+
             var xAxis = new LinearAxis
             {
                 Position = AxisPosition.Bottom,
@@ -79,74 +84,87 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                 StringFormat = "0.00"
             };
             model.Axes.Add(yAxis);
+        }
 
+        private static void AddColorAxis(PlotModel model, List<OxyColor>? colors)
+        {
+            if (colors is null) return;
             var colorAxis = new LinearColorAxis
             {
                 Position = AxisPosition.Right,
                 Key = "pointColors",
-                Palette = new OxyPalette(pcl.Colors),
+                Palette = new OxyPalette(colors),
                 Minimum = 0,
-                Maximum = pcl.Colors.Count - 1,
+                Maximum = colors.Count - 1,
                 HighColor = OxyColors.Undefined,
                 LowColor = OxyColors.Undefined,
                 IsAxisVisible = false
             };
             model.Axes.Add(colorAxis);
+        }
+
+        private static void AddScatterSeries(PlotModel model, PclFeatures pcl)
+        {
+            if (pcl.PointCloud is null || pcl.Colors is null) return;
             var scatter = new ScatterSeries
             {
                 MarkerType = MarkerType.Circle,
                 MarkerSize = 2,
-                ColorAxisKey = colorAxis.Key
+                ColorAxisKey = "pointColors"
             };
             for (int i = 0; i < pcl.PointCloud.Count; i++)
                 scatter.Points.Add(new ScatterPoint(pcl.PointCloud[i].X, pcl.PointCloud[i].Y, scatter.MarkerSize, value: i));
-
             model.Series.Add(scatter);
-            if (user.CurrentPcl is not null && user.CurrentPcl.Clusters is not null)
+        }
+
+        private static void AddClustersAnnotations(PlotModel model, List<Cluster> clusters, PclLims lims)
+        {
+            double yRange = lims.yMax - lims.yMin;
+            foreach (var cl in clusters)
             {
-                foreach (var cl in user.CurrentPcl.Clusters)
+                var rect = new RectangleAnnotation
                 {
-                    var rect = new RectangleAnnotation
-                    {
-                        MinimumX = cl.Lims.xMin,
-                        MaximumX = cl.Lims.xMax,
-                        MinimumY = cl.Lims.yMin,
-                        MaximumY = cl.Lims.yMax,
-                        Stroke = OxyColors.Black,
-                        StrokeThickness = 1,
-                        Fill = OxyColors.Undefined
-                    };
-                    model.Annotations.Add(rect);
+                    MinimumX = cl.Lims.xMin,
+                    MaximumX = cl.Lims.xMax,
+                    MinimumY = cl.Lims.yMin,
+                    MaximumY = cl.Lims.yMax,
+                    Stroke = OxyColors.Black,
+                    StrokeThickness = 1,
+                    Fill = OxyColors.Undefined
+                };
+                model.Annotations.Add(rect);
 
-                    var pt = new PointAnnotation
-                    {
-                        X = cl.Centroid.X,
-                        Y = cl.Centroid.Y,
-                        Shape = MarkerType.Circle,
-                        Size = 6,
-                        Fill = OxyColors.Red,
-                        Stroke = OxyColors.Black,
-                        StrokeThickness = 1
-                    };
-                    model.Annotations.Add(pt);
+                var pt = new PointAnnotation
+                {
+                    X = cl.Centroid.X,
+                    Y = cl.Centroid.Y,
+                    Shape = MarkerType.Circle,
+                    Size = 6,
+                    Fill = OxyColors.Red,
+                    Stroke = OxyColors.Black,
+                    StrokeThickness = 1
+                };
+                model.Annotations.Add(pt);
 
-                    var label = new TextAnnotation
-                    {
-                        Text = $"Size: {cl.Size.X:0.00}x{cl.Size.Y:0.00}x{cl.Size.Z:0.00}",
-                        TextPosition = new DataPoint(cl.Lims.xMin, cl.Lims.yMin - yRange * 0.008),
-                        FontSize = 14,
-                        TextVerticalAlignment = VerticalAlignment.Top,
-                        TextHorizontalAlignment = HorizontalAlignment.Left,
-                        Stroke = OxyColors.Undefined,
-                        Background = OxyColor.FromAColor(a: 200, OxyColors.White),
-                        Padding = new OxyThickness(2)
-                    };
-                    model.Annotations.Add(label);
-                }
+                var label = new TextAnnotation
+                {
+                    Text = $"Size: {cl.Size.X:0.00}x{cl.Size.Y:0.00}x{cl.Size.Z:0.00}",
+                    TextPosition = new DataPoint(cl.Lims.xMin, cl.Lims.yMin - yRange * 0.008),
+                    FontSize = 14,
+                    TextVerticalAlignment = VerticalAlignment.Top,
+                    TextHorizontalAlignment = HorizontalAlignment.Left,
+                    Stroke = OxyColors.Undefined,
+                    Background = OxyColor.FromAColor(a: 200, OxyColors.White),
+                    Padding = new OxyThickness(2)
+                };
+                model.Annotations.Add(label);
             }
+        }
 
-            double h = user.CurrentPcl.PclLims.yMax - user.CurrentPcl.PclLims.yMin;
-            double w = user.CurrentPcl.PclLims.xMax - user.CurrentPcl.PclLims.xMin;
+        private static (int hImage, int wImage) CalculateImageSize(PclLims lims)
+        {
+            double h = lims.yMax - lims.yMin;
+            double w = lims.xMax - lims.xMin;
             int hImage = 0, wImage = 0;
             if (w > h)
             {
@@ -160,9 +178,9 @@ namespace PointCloudHandlingBot.PointCloudProcesses
                 double koeff = w / h * 1.1;
                 wImage = (int)(hImage / koeff);
             }
-            var exporter = new PngExporter() { Height = hImage, Width = wImage };
-            return (exporter, model);
+            return (hImage, wImage);
         }
+
         internal static List<OxyColor> Coloring(PclFeatures pcl, Func<float, float, float, OxyColor> ColorMap)
         {
             int count = pcl.PointCloud.Count;
