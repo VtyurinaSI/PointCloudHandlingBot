@@ -9,7 +9,7 @@ namespace PointCloudHandlingBot.Commands
 {
     internal class CutCmd : CommandBase
     {
-        public CutCmd(Logger logger)
+        public CutCmd(Logging.Logger logger)
             : base("/cut", logger, 1,
                   ["Введи неравнствами интересующую тебя область через ';'"])
         { }

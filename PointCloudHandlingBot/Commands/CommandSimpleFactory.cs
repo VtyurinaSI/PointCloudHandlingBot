@@ -15,7 +15,7 @@ namespace PointCloudHandlingBot.Commands
         /// </summary>
         /// <param name="commandName">Имя команды</param>
         /// <returns>Экземпляр команды</returns>
-        public static CommandBase CreateCommand(string commandName, Logger log)
+        public static CommandBase CreateCommand(string commandName, Logging.Logger log)
         {
             return commandName switch
             {

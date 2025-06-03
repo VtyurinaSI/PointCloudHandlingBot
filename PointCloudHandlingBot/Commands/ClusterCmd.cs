@@ -16,7 +16,7 @@ namespace PointCloudHandlingBot.Commands
             ["Внутрикластерное расстояние",
              "Минимальное количество точек в кластере",
              "Минимальное количество точек в кластере для удаления шума"];
-        internal ClusterCmd(Logger logger)
+        internal ClusterCmd(Logging.Logger logger)
             : base("/cluster", logger,  3, paramsDescriptions) { }
 
     public override List<IMsgPipelineSteps> Process(UserData user)

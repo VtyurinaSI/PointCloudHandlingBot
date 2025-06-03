@@ -10,7 +10,7 @@ namespace PointCloudHandlingBot.Commands
 {
     internal class ResetCmd: CommandBase
     {
-        public ResetCmd(Logger logger) : base("/reset", logger, 0)
+        public ResetCmd(Logging.Logger logger) : base("/reset", logger, 0)
         {
         }
         public override List<IMsgPipelineSteps> Process(UserData user)

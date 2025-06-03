@@ -10,7 +10,7 @@ namespace PointCloudHandlingBot.Commands
             ["Внутрикластерное расстояние",
              "Минимальное количество точек в кластере",
              "Минимальное количество точек в кластере для удаления шума"];
-        internal DBSCANfiltCmd(Logger logger)
+        internal DBSCANfiltCmd(Logging.Logger logger)
             : base("/DBSCANfilt", logger, 3, paramsDescriptions) { }
 
         public override List<IMsgPipelineSteps> Process(UserData user)

@@ -6,7 +6,7 @@ namespace PointCloudHandlingBot.Commands
 {
     internal class DelWallCmd : CommandBase
     {
-        public DelWallCmd(Logger logger) : base("RANSACWall", logger, 1,
+        public DelWallCmd(Logging.Logger logger) : base("RANSACWall", logger, 1,
             ["Какая точность у камеры? (в тех единицах измерения, в оторых сохранено облако точек)"])
         {
         }

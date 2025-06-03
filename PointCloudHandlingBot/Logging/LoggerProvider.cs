@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Telegram.Bot;
 
-namespace PointCloudHandlingBot
+namespace PointCloudHandlingBot.Logging
 {
     public class LoggerProvider : ILoggerProvider
     {

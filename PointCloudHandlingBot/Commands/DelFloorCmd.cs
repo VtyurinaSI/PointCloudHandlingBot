@@ -11,7 +11,7 @@ namespace PointCloudHandlingBot.Commands
 {
     internal class DelFloorCmd : CommandBase
     {
-        public DelFloorCmd(Logger logger) : base("RANSACFloor", logger, 1, 
+        public DelFloorCmd(Logging.Logger logger) : base("RANSACFloor", logger, 1, 
             ["Какая точность у камеры? (в тех единицах измерения, в оторых сохранено облако точек)"])
         {
         }

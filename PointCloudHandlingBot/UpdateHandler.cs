@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 using PointCloudHandlingBot.Configurate;
 using PointCloudHandlingBot.DataBaseTables;
+using PointCloudHandlingBot.Logging;
 using PointCloudHandlingBot.MsgPipeline;
 using PointCloudHandlingBot.PointCloudProcesses;
 using System.Threading.Tasks;

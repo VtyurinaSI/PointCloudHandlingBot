@@ -10,7 +10,7 @@ namespace PointCloudHandlingBot
 
     class TextMessageHandling
     {
-        public List<IMsgPipelineSteps> WhatDoYouWant(UserData user, string textMsg, Logger logger)
+        public List<IMsgPipelineSteps> WhatDoYouWant(UserData user, string textMsg, Logging.Logger logger)
         {
             textMsg = textMsg.Trim();
 
@@ -20,7 +20,7 @@ namespace PointCloudHandlingBot
             return HandleNewCommand(user, textMsg, logger);
         }
 
-        private List<IMsgPipelineSteps> HandleActiveCommand(UserData user, string textMsg, Logger logger)
+        private List<IMsgPipelineSteps> HandleActiveCommand(UserData user, string textMsg, Logging.Logger logger)
         {
             if (!user.Command.IsInited)
             {
@@ -37,7 +37,7 @@ namespace PointCloudHandlingBot
             return [];
         }
 
-        private List<IMsgPipelineSteps> HandleNewCommand(UserData user, string textMsg, Logger logger)
+        private List<IMsgPipelineSteps> HandleNewCommand(UserData user, string textMsg, Logging.Logger logger)
         {
             try
             {

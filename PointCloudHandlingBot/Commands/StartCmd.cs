@@ -9,7 +9,7 @@ namespace PointCloudHandlingBot.Commands
 {
     internal class StartCmd: CommandBase
     {
-        public StartCmd(Logger logger) : base("/start", logger, 0)
+        public StartCmd(Logging.Logger logger) : base("/start", logger, 0)
         {
         }
         public override List<IMsgPipelineSteps> Process(UserData user)

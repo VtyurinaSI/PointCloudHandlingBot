@@ -10,7 +10,7 @@ namespace PointCloudHandlingBot.Commands
 {
     internal class ColorMapCmd : CommandBase
     {
-        public ColorMapCmd(Logger logger) : base("/colormap", logger, 1, ["SetecolorMap"])
+        public ColorMapCmd(Logging.Logger logger) : base("/colormap", logger, 1, ["SetecolorMap"])
         {
         }
         public override List<IMsgPipelineSteps> Process(UserData user)

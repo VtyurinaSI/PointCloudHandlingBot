@@ -13,28 +13,16 @@ namespace PointCloudHandlingBot.Commands
 {
     internal class ZRotCmd : CommandBase
     {
-        public ZRotCmd(Logger logger) : base("/xrot", logger, 0, ["Угол поврота вокруг оси Z"])
-        {
-        }
+        public ZRotCmd(Logging.Logger logger) : base("/xrot", logger, 0, ["Угол поврота вокруг оси Z"])
+        {}
 
         public override List<IMsgPipelineSteps> Process(UserData user)
         {
             logger.LogBot($"Поворчаиваю вокруг Z. Параметры: {string.Join(" ", ParseParts)}",
             LogLevel.Information, user, "Поворачиваю...");
+            
 
-            int vol = user.CurrentPcl.PointCloud.Count;
-            List<Vector3> rotated = new(new Vector3[vol]);
-
-            Matrix4x4 rotationMatrix = Matrix4x4.CreateRotationZ((float)ParseParts[0] * MathF.PI / 180.0f);
-
-
-            for (int i = 0; i < vol; i++)
-            {
-                var transformedVector = Vector3.Transform(user.CurrentPcl.PointCloud[i], rotationMatrix);
-                rotated[i] = transformedVector;
-            }
-
-            user.CurrentPcl.PointCloud = rotated;
+            user.CurrentPcl.PointCloud = Rotation.GetRotate(user.CurrentPcl.PointCloud, ParseParts[0], "z"); 
             user.CurrentPcl.UpdLims();
             user.CurrentPcl.Colors = Drawing.Coloring(user.CurrentPcl, user.ColorMap);
             logger.LogBot($"Поворот выполнен",

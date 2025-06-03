@@ -5,7 +5,7 @@ namespace PointCloudHandlingBot.Commands
 {
     internal class StopFilterCmd : CommandBase
     {
-        public StopFilterCmd(Logger logger) : base("/stopFilter", logger, 0)
+        public StopFilterCmd(Logging.Logger logger) : base("/stopFilter", logger, 0)
         {
         }
 

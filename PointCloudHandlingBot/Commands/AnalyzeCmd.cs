@@ -4,7 +4,7 @@ namespace PointCloudHandlingBot.Commands
 {
     internal class AnalyzeCmd : CommandBase
     {
-        public AnalyzeCmd(Logger logger) : base("/analyze", logger, 0)
+        public AnalyzeCmd(Logging.Logger logger) : base("/analyze", logger, 0)
         {
         }
 

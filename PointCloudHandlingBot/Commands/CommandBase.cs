@@ -4,7 +4,7 @@ namespace PointCloudHandlingBot.Commands
 {
     public abstract class CommandBase
     {
-        public CommandBase(string name, Logger logger,
+        public CommandBase(string name, Logging.Logger logger,
             int parsePartsNum, List<string>? paramsDescriptions = null)
         {
             this.logger = logger;
@@ -13,7 +13,7 @@ namespace PointCloudHandlingBot.Commands
             ParamsDescriptions = paramsDescriptions;
         }
 
-        private protected Logger logger;
+        private protected Logging.Logger logger;
         public int ParsePartsNum { get; set; }
         public string CommandName { get; set; }
         private protected List<double> ParseParts { get; set; } = [];
