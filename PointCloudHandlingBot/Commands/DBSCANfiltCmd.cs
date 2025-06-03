@@ -7,15 +7,15 @@ namespace PointCloudHandlingBot.Commands
     internal class DBSCANfiltCmd : CommandBase
     {
         private static readonly List<string> paramsDescriptions =
-            ["Внутрикластерное расстояние",
-             "Минимальное количество точек в кластере",
-             "Минимальное количество точек в кластере для удаления шума"];
+            ["Введи радиус поиска соседей для точки(например, 0.1). Определяет, насколько далеко алгоритм будет искать соседние точки",
+             "Минимальное количество точек для образования кластера",
+             "Мминимальный объём кластера (например, 10). Кластеры меньшего объёма будут считаться шумом и удаляться"];
         internal DBSCANfiltCmd(Logging.Logger logger)
             : base("/DBSCANfilt", logger, 3, paramsDescriptions) { }
 
         public override List<IMsgPipelineSteps> Process(UserData user)
         {
-            logger.LogBot($"Применение воксельного фильтра. Параметры: {string.Join(" ", ParseParts)}",
+            logger.LogBot($"Применение фильтрации шума. Параметры: {string.Join(" ", ParseParts)}",
                 LogLevel.Information, user, "Удаляю шум...");
 
             DBSCANfilt dbscan = new(ParseParts[0], (int)ParseParts[1], (int)ParseParts[2]);

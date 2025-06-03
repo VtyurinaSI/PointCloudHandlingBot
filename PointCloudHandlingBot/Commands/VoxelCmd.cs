@@ -14,7 +14,7 @@ namespace PointCloudHandlingBot.Commands
     internal class VoxelCmd : CommandBase
     {
         internal VoxelCmd(Logging.Logger logger)
-            : base("/voxel", logger,1, [.. Enumerable.Repeat("Param", 1)]) { }
+            : base("/voxel", logger,1, [.. Enumerable.Repeat("Введите размер вокселя (положительное число)", 1)]) { }
 
         public override List<IMsgPipelineSteps> Process(UserData user)
         {

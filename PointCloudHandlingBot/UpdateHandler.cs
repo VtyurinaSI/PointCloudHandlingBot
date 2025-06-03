@@ -50,7 +50,7 @@ namespace PointCloudHandlingBot
             if (user is null)
                 return;
             db.Execute("""
-        INSERT INTO Userst (UserChatID, UserName)
+        INSERT INTO Users (UserChatID, UserName)
         VALUES (@UserChatID, @UserName)
         ON CONFLICT (UserChatID) DO NOTHING;
     """, new DataBaseTables.User() { UserChatID = user.ChatId, UserName = user.UserName });

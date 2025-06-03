@@ -35,6 +35,7 @@ namespace PointCloudHandlingBot.Commands
                 "/cut" => new CutCmd(log),
                 "/statistical" => new StatisticalCmd(log),
                 "/median" => new MedianCmd(log),
+                "/help" => new HelpCmd(log),
                 _ => throw new ArgumentException($"Команда {commandName} не поддерживается.")
             };
         }

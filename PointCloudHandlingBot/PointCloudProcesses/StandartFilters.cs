@@ -5,7 +5,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PointCloudHandlingBot.Commands
+namespace PointCloudHandlingBot.PointCloudProcesses
 {
     internal static class StandartFilters
     {
