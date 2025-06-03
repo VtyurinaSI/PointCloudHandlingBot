@@ -13,7 +13,7 @@ namespace PointCloudHandlingBot.Commands
 {
     internal class YRotCmd : CommandBase
     {
-        public YRotCmd(Logging.Logger logger) : base("/yrot", logger, 0, ["Угол поврота вокруг оси Y"])
+        public YRotCmd(Logging.Logger logger) : base("/yrot", logger, 1, ["Угол поврота вокруг оси Y"])
         {
         }
 

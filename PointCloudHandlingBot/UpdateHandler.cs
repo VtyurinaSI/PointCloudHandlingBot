@@ -97,7 +97,6 @@ namespace PointCloudHandlingBot
         {
             var textMsg = callbackQuery.Data;
             OnHandleUpdateStarted?.Invoke(user, textMsg);
-            lp = new(bot);
             return text.WhatDoYouWant(user, textMsg, (Logger)logger);
         }
 
@@ -144,7 +143,7 @@ namespace PointCloudHandlingBot
         INSERT INTO pointclouds (UserChatID, OriginalFileName,TelegramFileID,UploadTimestamp,FileType,InitialPointCount)
         VALUES (@UserChatID, @OriginalFileName,@TelegramFileID,@UploadTimestamp,@FileType,@InitialPointCount);
     """, pcl);
-            logger.LogBot($"Полуен файл {user.FileName}", LogLevel.Information, user);
+            logger.LogBot($"Получен файл {user.FileName}", LogLevel.Information, user);
             ResetPcl.ResetPclHandle(user);
             return new List<IMsgPipelineSteps>
             {

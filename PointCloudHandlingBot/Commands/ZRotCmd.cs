@@ -13,7 +13,7 @@ namespace PointCloudHandlingBot.Commands
 {
     internal class ZRotCmd : CommandBase
     {
-        public ZRotCmd(Logging.Logger logger) : base("/xrot", logger, 0, ["Угол поврота вокруг оси Z"])
+        public ZRotCmd(Logging.Logger logger) : base("/xrot", logger, 1, ["Угол поврота вокруг оси Z"])
         {}
 
         public override List<IMsgPipelineSteps> Process(UserData user)
